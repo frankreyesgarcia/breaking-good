@@ -1,6 +1,6 @@
 package se.kth.explaining;
 
-import se.kth.core.Changes;
+import se.kth.core.Changes_v2;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,12 +9,12 @@ import static java.lang.Thread.sleep;
 
 public abstract class ExplanationTemplate {
 
-    protected Changes changes;
+    protected Changes_v2 changes_v2;
 
     protected String fileName;
 
-    public ExplanationTemplate(Changes changes, String fileName) {
-        this.changes = changes;
+    public ExplanationTemplate(Changes_v2 changes, String fileName) {
+        this.changes_v2 = changes;
         this.fileName = fileName;
 
     }
@@ -39,7 +39,7 @@ public abstract class ExplanationTemplate {
 
     public void generateTemplate() {
 
-        if(changes.changes().isEmpty()){
+        if (changes_v2.changes().getBrokenUse().isEmpty()) {
             return;
         }
 

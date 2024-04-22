@@ -3,15 +3,21 @@ package se.kth.breaking_changes;
 import japicmp.model.*;
 import lombok.Getter;
 import se.kth.core.Instruction;
+import se.kth.japicompare.IBreakingChange;
+import spoon.reflect.declaration.CtPackage;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 
 @Getter
 public class JApiCmpElements implements JApiCompareScan {
     private final Set<ApiChange> changes = new HashSet<>();
+
+    private final List<IBreakingChange> breakingChanges = new ArrayList<>();
+
+    public JApiCmpElements() {
+
+    }
 
     public Set<ApiChange> getAllChanges() {
         return changes;
@@ -39,6 +45,17 @@ public class JApiCmpElements implements JApiCompareScan {
 
     @Override
     public void visit(JApiMethod jApiMethod) {
+
+
+        if (jApiMethod.getName().contains("setPort")) {
+            System.out.println("Method: " + jApiMethod.getName());
+        }
+        if (jApiMethod.getCompatibilityChanges().isEmpty()) {
+            return;
+        }
+
+
+
         changes.addAll(jApiMethod.getCompatibilityChanges().stream().map(c -> {
             ApiChange apiChange = new ApiChange();
             apiChange.setCategory(jApiMethod.getChangeStatus().toString());

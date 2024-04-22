@@ -1,7 +1,10 @@
 package se.kth.spoon_compare;
 
 import se.kth.breaking_changes.ApiChange;
+import se.kth.breaking_changes.BrokenUse;
 import se.kth.log_Analyzer.ErrorInfo;
+import se.kth.spoon_visitor.BreakingChangeVisitor;
+import se.kth.spoon_visitor.CombinedVisitor;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtComment;
 import spoon.reflect.code.CtConstructorCall;
@@ -70,6 +73,20 @@ public class SpoonAnalyzer {
         }
         return scanner.getResults();
 
+    }
+
+
+    public Set<BrokenUse> compare(List<BreakingChangeVisitor> visitors, String clientPath) {
+        CombinedVisitor visitor = new CombinedVisitor(visitors);
+        List<CtElement> elements = model.filterChildren(element ->
+                !shouldBeIgnored(element)
+                        && element.getPosition().isValidPosition()
+                        && element.getPosition().toString().contains(clientPath)
+                        && errorLines.contains(element.getPosition().getLine())
+
+        ).list();
+        visitor.scan(elements);
+        return visitor.getBrokenUses();
     }
 
 

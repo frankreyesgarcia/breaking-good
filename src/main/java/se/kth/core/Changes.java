@@ -10,3 +10,4 @@ public record Changes(ApiMetadata oldApiVersion, ApiMetadata newApiVersion, Set<
         this(newApiVersion, oldApiVersion, new HashSet<>());
     }
 }
+

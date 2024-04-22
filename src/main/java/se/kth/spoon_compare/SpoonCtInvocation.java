@@ -76,11 +76,8 @@ public class SpoonCtInvocation {
 
 
     public boolean methodRemove() {
-
         String invocationName = Util.fullyQualifiedName(invocation.getExecutable());
         String apiReference = apiChange.getReference().getFullQualifiedName();
-       if(apiReference.contains("setPort")){
-           apiReference = apiReference.split("::")[1];}
         return invocationName.equals(apiReference);
     }
 

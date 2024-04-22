@@ -1,14 +1,13 @@
 package se.kth.data;
 
 import com.fasterxml.jackson.databind.type.MapType;
-import se.kth.breaking_changes.ApiChange;
 import se.kth.breaking_changes.ApiMetadata;
 import se.kth.breaking_changes.JApiCmpAnalyze;
-import se.kth.core.Changes;
+import se.kth.core.Changes_v2;
 import se.kth.core.CombineResults;
-import se.kth.core.Util;
 import se.kth.explaining.CompilationErrorTemplate;
 import se.kth.explaining.ExplanationTemplate;
+import se.kth.japicompare.IBreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
 import se.kth.log_Analyzer.MavenLogAnalyzer;
 import se.kth.spoon_compare.Client;
@@ -21,13 +20,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class Main {
     static List<BreakingUpdateMetadata> list = new ArrayList<>();
 
     public static void main(String[] args) {
-        String fileName = "d3af06df4613be146bb9f8034e1a8a3098050c82";
+        String fileName = "00a7cc31784ac4a9cc27d506a73ae589d6df36d6";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
 //      list = getBreakingCommit(Path.of("examples/Benchmark"));
@@ -92,17 +90,15 @@ public class Main {
 
     public static void generateTemplate(List<BreakingUpdateMetadata> breakingUpdateList) {
 
-        String githubURL = "https://github.com/knaufk/flink-faker/blob/1ef97ea6c5b6e34151fe6167001b69e003449f95/src/main/java/com/github/knaufk/flink/faker/DateTime.java#L44";
-
         DockerImages dockerImages = new DockerImages();
 
         List<ExplanationStatistics> explanationStatistics = new ArrayList<>();
 
         for (BreakingUpdateMetadata breakingUpdate : breakingUpdateList) {
 
-            if (breakingUpdate.project().equals("google-cloud-java")) {
-                continue;
-            }
+//            if (breakingUpdate.project().equals("google-cloud-java")) {
+//                continue;
+//            }
 
             Path jarsFile = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/");
 
@@ -125,6 +121,7 @@ public class Main {
 
     }
 
+
     private static void processingBreakingUpdate(BreakingUpdateMetadata breakingUpdate, Path jarsFile, List<ExplanationStatistics> explanationStatistics) {
         try {
 
@@ -142,21 +139,30 @@ public class Main {
                     newApiVersion
             );
 
-            Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
-            System.out.println("Number of changes: " + apiChanges.size());
+//            Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
+//            System.out.println("Number of changes: " + apiChanges.size());
 
+            List<IBreakingChange> b = jApiCmpAnalyze.useJApiCmp_v2();
             Client client = new Client(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/%s/%s".formatted(breakingUpdate.breakingCommit(), breakingUpdate.project())));
             client.setClasspath(List.of(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/%s/%s-%s.jar".formatted(breakingUpdate.breakingCommit(), breakingUpdate.updatedDependency().dependencyArtifactID(), breakingUpdate.updatedDependency().previousVersion()))));
 
             CtModel model = client.createModel();
-            CombineResults combineResults = new CombineResults(apiChanges, oldApiVersion, newApiVersion, mavenLogAnalyzer, model);
+//            CombineResults combineResults = new CombineResults(apiChanges, oldApiVersion, newApiVersion, mavenLogAnalyzer, model);
+            CombineResults combineResults = new CombineResults(oldApiVersion, newApiVersion, mavenLogAnalyzer, model);
             combineResults.setProject("projects/%s".formatted(breakingUpdate.breakingCommit()));
+            combineResults.setChanges(b);
 
             try {
-                Changes changes = combineResults.analyze();
+//                Changes changes = combineResults.analyze();
+                //v2
+
+                Changes_v2 changes_v2 = combineResults.analyze_v2();
+
+                int size = changes_v2.changes().getBrokenUse().size();
+
                 System.out.println("Project: " + breakingUpdate.project());
                 System.out.println("Breaking Commit: " + breakingUpdate.breakingCommit());
-                System.out.println("Changes: " + changes.changes().size());
+                System.out.println("Changes: " + size);
 
                 String explanationFolder = list.size() > 1 ? "Explanations/" : "Explanations_tmp/";
                 final var dir = Path.of(explanationFolder);
@@ -164,8 +170,8 @@ public class Main {
                     Files.createDirectory(dir);
                 }
 
-                explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changes.changes().size()));
-                ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
+                explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), size));
+                ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes_v2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
                 explanationTemplate.generateTemplate();
                 System.out.println("**********************************************************");
 //                System.out.println();

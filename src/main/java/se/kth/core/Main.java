@@ -5,12 +5,15 @@ import se.kth.breaking_changes.ApiMetadata;
 import se.kth.breaking_changes.JApiCmpAnalyze;
 import se.kth.explaining.CompilationErrorTemplate;
 import se.kth.explaining.ExplanationTemplate;
+
+import se.kth.japicompare.IBreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
 import se.kth.log_Analyzer.MavenLogAnalyzer;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 public class Main {
@@ -30,6 +33,7 @@ public class Main {
         );
 
         Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
+        List<IBreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
         try {
             MavenErrorLog errorLog = new MavenLogAnalyzer(new File("/Users/frank/Downloads/Test_Failures/webapp/1eb6d9d5b2a07720a0839457cee81e066dd932f2.log")).analyzeCompilationErrors();
 
@@ -42,10 +46,12 @@ public class Main {
 
             combineResults.setProject("/Users/frank/Downloads/Test_Failures");
 
+//            combineResults.setBreakingChange(breakingChanges);
+
             Changes changes = combineResults.analyze();
             changes.changes().forEach(change -> {
-                        ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes, "change");
-                        explanationTemplate.generateTemplate();
+//                        ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes, "change");
+//                        explanationTemplate.generateTemplate();
                     }
             );
 

@@ -3,7 +3,7 @@ package se.kth.breaking_changes;
 import japicmp.cli.JApiCli;
 import japicmp.config.Options;
 import japicmp.model.AccessModifier;
-import japicmp.model.JApiCompatibilityChange;
+import japicmp.model.JApiCompatibilityChangeType;
 import japicmp.model.JApiCompatibilityChangeType;
 import japicmp.util.Optional;
 

@@ -1,7 +1,11 @@
 package se.kth.explaining;
 
+import se.kth.breaking_changes.BrokenUse;
 import se.kth.core.BreakingChange;
-import se.kth.core.Changes;
+import se.kth.core.BrokenChange;
+import se.kth.core.Changes_v2;
+import se.kth.core.Results;
+import se.kth.log_Analyzer.ErrorInfo;
 import se.kth.spoon_compare.SpoonResults;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.declaration.CtNamedElement;
@@ -9,7 +13,7 @@ import spoon.reflect.declaration.CtNamedElement;
 public class CompilationErrorTemplate extends ExplanationTemplate {
 
 
-    public CompilationErrorTemplate(Changes changes, String fileName) {
+    public CompilationErrorTemplate(Changes_v2 changes, String fileName) {
         super(changes, fileName);
     }
 
@@ -17,13 +21,13 @@ public class CompilationErrorTemplate extends ExplanationTemplate {
     public String getHead() {
 
         return "CI detected that the dependency upgrade from version **%s** to **%s** has failed. Here are details to help you understand and fix the problem:"
-                .formatted(changes.oldApiVersion().getName(), changes.newApiVersion().getName());
+                .formatted(changes_v2.oldApiVersion().getName(), changes_v2.newApiVersion().getName());
     }
 
-    public String clientErrorLine(SpoonResults spoonResults) {
-        return "            *   An error was detected in line %s which is making use of an outdated API.\n".formatted(spoonResults.getErrorInfo().getClientLinePosition()) +
+    public String clientErrorLine(ErrorInfo errorInfo, BrokenUse brokenUse) {
+        return "            *   An error was detected in line %s which is making use of an outdated API.\n".formatted(errorInfo.getClientLinePosition()) +
                 "             ``` java\n" +
-                "             %s   %s;\n".formatted(spoonResults.getErrorInfo().getClientLinePosition(), spoonResults.getClientLine()) +
+                "             %s   %s;\n".formatted(errorInfo.getClientLinePosition(), brokenUse.element()) +
                 "            ```\n";
     }
 
@@ -33,9 +37,9 @@ public class CompilationErrorTemplate extends ExplanationTemplate {
     }
 
 
-    public String logLineErrorMessage(SpoonResults spoonResults) {
+    public String logLineErrorMessage(ErrorInfo errorInfo) {
         try {
-            return "            *   >[%s](%s)\n".formatted(spoonResults.getErrorInfo().getErrorMessage().concat("<br>&nbsp;&nbsp;&nbsp;&nbsp;"+spoonResults.getErrorInfo().getAdditionalInfo()), spoonResults.getErrorInfo().getErrorLogGithubLink());
+            return "            *   >[%s](%s)\n".formatted(errorInfo.getErrorMessage().concat("<br>&nbsp;&nbsp;&nbsp;&nbsp;" + errorInfo.getAdditionalInfo()), errorInfo.getErrorLogGithubLink());
         } catch (
                 Exception e) {
 
@@ -44,11 +48,11 @@ public class CompilationErrorTemplate extends ExplanationTemplate {
 
     }
 
-    public String errorSection(BreakingChange breakingChange, int instructions) {
+    public String errorSection(Results breakingChange, int instructions) {
         StringBuilder message = new StringBuilder();
-        for (SpoonResults spoonResults : breakingChange.getErrorInfo()) {
+        for (ErrorInfo spoonResults : breakingChange.getErrorInfo()) {
             try {
-                message.append(logLineErrorMessage(spoonResults)).append(clientErrorLine(spoonResults));
+                message.append(logLineErrorMessage(spoonResults)).append(clientErrorLine(spoonResults, breakingChange.getBrokenUse()));
             } catch (Exception e) {
                 return "";
             }
@@ -68,15 +72,15 @@ public class CompilationErrorTemplate extends ExplanationTemplate {
 
         String message = "";
         // if there are more than one changes
-        if (!changes.changes().isEmpty()) {
-            String instructions = changes.changes().size() > 1 ? "instructions" : "instruction";
+        if (!changes_v2.changes().getBrokenUse().isEmpty()) {
+            String instructions = changes_v2.changes().getBrokenUse().size() > 1 ? "instructions" : "instruction";
             String firstLine = "1. Your client utilizes **%d** %s which has been modified in the new version of the dependency."
-                    .formatted(changes.changes().size(), instructions);
+                    .formatted(changes_v2.changes().getBrokenUse().size(), instructions);
 
             String text = "";
-            for (BreakingChange changes : changes.changes()) {
-                String category = translateCategory(changes.getApiChanges().getChangeType().toString());
-                final var singleChange = generateElementExplanation(changes, category, this.changes.changes().size());
+            for (Results results : changes_v2.changes().getBrokenUse()) {
+                String category = translateCategory(results.getBrokenUse().change().toString());
+                final var singleChange = generateElementExplanation(results, category, this.changes_v2.changes().getBrokenUse().size());
                 text = text.concat(singleChange);
             }
             message = firstLine + "\n" + text;
@@ -84,28 +88,29 @@ public class CompilationErrorTemplate extends ExplanationTemplate {
         return message;
     }
 
-    private String generateElementExplanation(BreakingChange changes, String category, int instructions) {
+    private String generateElementExplanation(Results result, String category, int instructions) {
+        BrokenUse use = result.getBrokenUse();
         if (instructions > 1) {
             return "   * <details>\n" +
-                    "        <summary>%s <b>%s</b> which has been <b>%s</b> in the new version of the dependency</summary>\n".formatted(changes.getApiChanges().getInstruction(), changes.getErrorInfo().get(0).getElement(), category) +
+                    "        <summary>%s <b>%s</b> which has been <b>%s</b> in the new version of the dependency</summary>\n".formatted(use.change(),use.usedApiElement().toString(), category) +
                     "            \n" +
                     "        * <details>\n" +
                     "          <summary>The failure is identified from the logs generated in the build process. </summary>\n" +
                     "          \n" +
-                    errorSection(changes, instructions) +
+                    errorSection(result, instructions) +
                     "\n" +
                     "          </details>\n" +
                     "            \n" +
-                    newCandidates(changes) +
+//                    newCandidates(changes) +
                     "     </details>\n";
         } else {
-            return "   * <summary>%s <b>%s</b> which has been <b>%s</b> in the new version of the dependency</summary>\n".formatted(changes.getApiChanges().getInstruction(), changes.getErrorInfo().get(0).getElement(), category) +
+            return "   * <summary>%s <b>%s</b> which has been <b>%s</b> in the new version of the dependency</summary>\n".formatted(use.change(),use.usedApiElement().toString(), category) +
                     "            \n" +
                     "        *  <summary>The failure is identified from the logs generated in the build process. </summary>\n" +
                     "          \n" +
-                    errorSection(changes, instructions) +
-                    "            \n" +
-                    newCandidates(changes);
+                    errorSection(result, instructions) +
+                    "            \n";
+//                    newCandidates(changes);""
 
         }
     }
