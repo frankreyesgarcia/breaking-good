@@ -2,7 +2,7 @@ package se.kth.breaking_changes;
 
 import japicmp.model.JApiBehavior;
 import japicmp.model.JApiChangeStatus;
-import japicmp.model.JApiCompatibilityChange;
+import japicmp.model.JApiCompatibilityChangeType;
 import spoon.reflect.reference.CtReference;
 
 import java.util.Objects;
@@ -28,7 +28,7 @@ public class ApiChange {
 
     private JApiChangeStatus changeType;
 
-    private JApiCompatibilityChange compatibilityChange;
+    private JApiCompatibilityChangeType compatibilityChange;
 
     private AbstractApiChange reference;
 
@@ -60,7 +60,7 @@ public class ApiChange {
                 ", newLongName='" + newLongName + '\'' +
                 ", changeType=" + changeType.toString() +
                 ", instruction='" + instruction + '\'' +
-                ", compatibilityChange=" + compatibilityChange.getType() +
+                ", compatibilityChange=" + compatibilityChange +
                 '}';
     }
 
@@ -69,7 +69,7 @@ public class ApiChange {
         if (this == that) return true;
         if (that == null || getClass() != that.getClass()) return false;
         ApiChange thatLibraryChange = (ApiChange) that;
-        return this.getCategory().equals(thatLibraryChange.getCategory())
+        return this.getCompatibilityChange().equals(thatLibraryChange.getCompatibilityChange())
                 && this.getName().equals(thatLibraryChange.getName());
     }
 

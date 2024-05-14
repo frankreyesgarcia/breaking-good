@@ -1,6 +1,5 @@
 package se.kth.spoon_compare;
 
-import japicmp.model.JApiCompatibilityChangeType;
 import lombok.Getter;
 import se.kth.breaking_changes.ApiChange;
 import se.kth.log_Analyzer.ErrorInfo;
@@ -35,16 +34,16 @@ public class BreakingGoodScanner extends CtScanner {
 
     @Override
     public <T> void visitCtTypeReference(CtTypeReference<T> reference) {
-        if (reference.getPosition().isValidPosition() && clientLine.contains(reference.getPosition().getLine())) {
-            SpoonResults spoonResults = new SpoonResults();
-            spoonResults.setElement(reference.toString());
-            spoonResults.setName(reference.getQualifiedName());
-            spoonResults.setClientLine(reference.toString());
-            spoonResults.setPattern("");
-            spoonResults.setErrorInfo(getMavenErrorLog(reference.getPosition().getLine()));
-            spoonResults.setCtElement(reference);
-            results.add(spoonResults);
-        }
+//        if (reference.getPosition().isValidPosition() && clientLine.contains(reference.getPosition().getLine())) {
+//            SpoonResults spoonResults = new SpoonResults();
+//            spoonResults.setElement(reference.toString());
+//            spoonResults.setName(reference.getQualifiedName());
+//            spoonResults.setClientLine(reference.toString());
+//            spoonResults.setPattern("");
+//            spoonResults.setErrorInfo(getMavenErrorLog(reference.getPosition().getLine()));
+//            spoonResults.setCtElement(reference);
+//            results.add(spoonResults);
+//        }
         super.visitCtTypeReference(reference);
 
     }
@@ -202,9 +201,8 @@ public class BreakingGoodScanner extends CtScanner {
 
     @Override
     public <T> void visitCtExecutableReference(CtExecutableReference<T> reference) {
-        apiChanges.stream().filter(apiChange -> apiChange.getName().equals(reference.getSimpleName())).forEach(apiChange -> {
-            if (apiChange.getCompatibilityChange().getType().equals(JApiCompatibilityChangeType.METHOD_NO_LONGER_THROWS_CHECKED_EXCEPTION)) {
-            }
+
+        apiChanges.stream().filter(apiChange -> {
 //            System.out.println("Api compatibility: " + apiChange.getCompatibilityChange().getType().toString());
 //            System.out.println("Executable Reference: " + reference.getSimpleName());
 //            MethodBreakingChange a = (MethodBreakingChange) apiChange.getReference();
@@ -220,6 +218,7 @@ public class BreakingGoodScanner extends CtScanner {
             spoonResults.setElement(reference.getSignature());
             spoonResults.setErrorInfo(getMavenErrorLog(reference.getPosition().getLine()));
             results.add(spoonResults);
+            return false;
         });
 
         super.visitCtExecutableReference(reference);
@@ -281,9 +280,9 @@ public class BreakingGoodScanner extends CtScanner {
 
     @Override
     public <T> void visitCtInvocation(CtInvocation<T> invocation) {
-
-        if (invocation.getPosition().isValidPosition() && clientLine.contains(invocation.getPosition().getLine())) {
-            apiChanges.stream().filter(apiChange -> apiChange.getName().equals(invocation.getExecutable().getSimpleName())).forEach(apiChange -> {
+        apiChanges.forEach(apiChange -> {
+            boolean match = new SpoonCtInvocation(invocation, apiChange).compare();
+            if (match) {
                 SpoonResults spoonResults = new SpoonResults();
                 spoonResults.setName(invocation.getExecutable().getSimpleName());
                 spoonResults.setCtElement(invocation);
@@ -291,8 +290,8 @@ public class BreakingGoodScanner extends CtScanner {
                 spoonResults.setElement(invocation.getExecutable().getSignature());
                 spoonResults.setErrorInfo(getMavenErrorLog(invocation.getPosition().getLine()));
                 results.add(spoonResults);
-            });
-        }
+            }
+        });
         super.visitCtInvocation(invocation);
     }
 
@@ -311,15 +310,15 @@ public class BreakingGoodScanner extends CtScanner {
     @Override
     public <T> void visitCtLocalVariable(CtLocalVariable<T> localVariable) {
         // visitors.forEach(v -> v.visitCtLocalVariable(localVariable));
-        if (localVariable.getPosition().isValidPosition() && clientLine.contains(localVariable.getPosition().getLine())) {
-            SpoonResults spoonResults = new SpoonResults();
-            spoonResults.setName(localVariable.getSimpleName());
-            spoonResults.setCtElement(localVariable);
-            spoonResults.setClientLine(localVariable.toString());
-            spoonResults.setElement(localVariable.getType().toString());
-            spoonResults.setErrorInfo(getMavenErrorLog(localVariable.getPosition().getLine()));
-            results.add(spoonResults);
-        }
+//        if (localVariable.getPosition().isValidPosition() && clientLine.contains(localVariable.getPosition().getLine())) {
+//            SpoonResults spoonResults = new SpoonResults();
+//            spoonResults.setName(localVariable.getSimpleName());
+//            spoonResults.setCtElement(localVariable);
+//            spoonResults.setClientLine(localVariable.toString());
+//            spoonResults.setElement(localVariable.getType().toString());
+//            spoonResults.setErrorInfo(getMavenErrorLog(localVariable.getPosition().getLine()));
+//            results.add(spoonResults);
+//        }
         super.visitCtLocalVariable(localVariable);
     }
 
@@ -356,7 +355,19 @@ public class BreakingGoodScanner extends CtScanner {
 
     @Override
     public <T> void visitCtConstructorCall(CtConstructorCall<T> ctConstructorCall) {
-        // visitors.forEach(v -> v.visitCtConstructorCall(ctConstructorCall));
+
+        for (ApiChange apiChange : apiChanges) {
+            boolean match = new SpoonCtConstructorCall(ctConstructorCall, apiChange).compare();
+            if (match) {
+                SpoonResults spoonResults = new SpoonResults();
+                spoonResults.setName(ctConstructorCall.getExecutable().getDeclaringType().getSimpleName());
+                spoonResults.setCtElement(ctConstructorCall);
+                spoonResults.setClientLine(ctConstructorCall.toString());
+                spoonResults.setElement(ctConstructorCall.getExecutable().getSignature());
+                spoonResults.setErrorInfo(getMavenErrorLog(ctConstructorCall.getPosition().getLine()));
+                results.add(spoonResults);
+            }
+        }
         super.visitCtConstructorCall(ctConstructorCall);
     }
 
@@ -373,7 +384,8 @@ public class BreakingGoodScanner extends CtScanner {
     }
 
     @Override
-    public <T, E extends CtExpression<?>> void visitCtExecutableReferenceExpression(CtExecutableReferenceExpression<T, E> expression) {
+    public <T, E extends CtExpression<?>> void visitCtExecutableReferenceExpression
+            (CtExecutableReferenceExpression<T, E> expression) {
         // visitors.forEach(v -> v.visitCtExecutableReferenceExpression(expression));
         super.visitCtExecutableReferenceExpression(expression);
     }
@@ -551,6 +563,20 @@ public class BreakingGoodScanner extends CtScanner {
     @Override
     public void visitCtImport(CtImport ctImport) {
         // visitors.forEach(v -> v.visitCtImport(ctImport));
+
+        for (ApiChange apiChange : apiChanges) {
+            boolean match = new SpoonCtImport(ctImport, apiChange).compare();
+            if (match) {
+                SpoonResults spoonResults = new SpoonResults();
+                spoonResults.setName(ctImport.getReference().toString());
+                spoonResults.setCtElement(ctImport);
+                spoonResults.setClientLine(ctImport.toString());
+                spoonResults.setElement(ctImport.getReference().toString());
+                spoonResults.setErrorInfo(getMavenErrorLog(ctImport.getPosition().getLine()));
+                results.add(spoonResults);
+            }
+        }
+
         super.visitCtImport(ctImport);
     }
 

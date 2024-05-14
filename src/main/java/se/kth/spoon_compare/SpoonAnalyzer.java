@@ -1,7 +1,11 @@
 package se.kth.spoon_compare;
 
 import se.kth.breaking_changes.ApiChange;
+import se.kth.breaking_changes.BreakingGoodOptions;
 import se.kth.log_Analyzer.ErrorInfo;
+import se.kth.sponvisitors.BreakingChangeVisitor;
+import se.kth.sponvisitors.BrokenUse;
+import se.kth.sponvisitors.CombinedVisitor;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtComment;
 import spoon.reflect.code.CtConstructorCall;
@@ -39,18 +43,63 @@ public class SpoonAnalyzer {
         return element instanceof CtComment || element.isImplicit();
     }
 
+
+    public Set<BrokenUse> applySpoonV2(List<BreakingChangeVisitor> breakingChangeVisitors, BreakingGoodOptions opts, String fileInClient) {
+        CombinedVisitor visitor = new CombinedVisitor(breakingChangeVisitors, opts);
+        List<CtElement> elements = model.filterChildren(element ->
+                !shouldBeIgnored(element)
+                        && element.getPosition().isValidPosition()
+                        && element.getPosition().toString().contains(fileInClient)
+                        && errorLines.contains(element.getPosition().getLine())
+        ).list();
+
+//        add imports manually because they are not in the children list
+        model.getRootPackage().getFactory().CompilationUnit().getMap().forEach((k, v) -> {
+            if (v.getPosition().toString().contains(fileInClient)) {
+                v.getImports().forEach(imp -> {
+                    if (!shouldBeIgnored(imp)
+                            && imp.getPosition().isValidPosition()
+                            && errorLines.contains(imp.getPosition().getLine())) {
+                        elements.add(imp);
+                    }
+                });
+            }
+        });
+        visitor.scan(elements);
+        // We still need to visit the root package afterwards.
+//        visitor.scan(model.getRootPackage());
+        return visitor.getBrokenUses();
+    }
+
     public List<SpoonResults> applySpoon(String fileInClient) {
         // filter elements for breaking positions
         List<CtElement> elements = model.filterChildren(element ->
                 !shouldBeIgnored(element)
                         && element.getPosition().isValidPosition()
-                        && errorLines.contains(element.getPosition().getLine())
                         && element.getPosition().toString().contains(fileInClient)
+                        && errorLines.contains(element.getPosition().getLine())
+
         ).list();
 
+        //add imports manually because they are not in the children list
+//        model.getRootPackage().getFactory().CompilationUnit().getMap().forEach((k, v) -> {
+//            if (v.getPosition().toString().contains(fileInClient)) {
+//                v.getImports().forEach(imp -> {
+//                    if (!shouldBeIgnored(imp)
+//                            && imp.getPosition().isValidPosition()
+//                            && errorLines.contains(imp.getPosition().getLine())) {
+//                        elements.add(imp);
+//                    }
+//                });
+//            }
+//        });
 
         BreakingGoodScanner scanner = new BreakingGoodScanner(apiChanges, mavenErrorLog);
-        scanner.scan(elements);
+        try {
+            scanner.scan(elements);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return scanner.getResults();
 
     }
