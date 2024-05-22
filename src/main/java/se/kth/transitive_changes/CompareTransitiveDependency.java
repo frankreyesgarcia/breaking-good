@@ -29,7 +29,7 @@ public class CompareTransitiveDependency {
 
     public ApiMetadata convertToApiMetadata(Dependency dependency, Path folder) throws IOException, InterruptedException {
 
-        File file = Download.getJarFile(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), folder);
+        File file = Download.getJarFile(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), folder, "jar");
 
         if (file == null) {
             System.out.println("Could not download the jar file for " + dependency);
@@ -38,7 +38,7 @@ public class CompareTransitiveDependency {
         return new ApiMetadata(file.toPath());
     }
 
-    public void compareDependency() throws IOException, InterruptedException {
+    public List<BreakingChange> compareDependency() throws IOException, InterruptedException {
 
         Path tmp = Files.createTempDirectory("tmp");
 
@@ -50,7 +50,7 @@ public class CompareTransitiveDependency {
                 apiMetadataNewVersion,
                 apiMetadataOldVersion
         );
-        breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
+        return jApiCmpAnalyze.useJApiCmp_v2();
     }
 
     @Override

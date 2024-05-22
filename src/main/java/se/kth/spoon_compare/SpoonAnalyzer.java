@@ -39,7 +39,9 @@ public class SpoonAnalyzer {
 
     }
 
-    private static boolean shouldBeIgnored(CtElement element) {
+
+
+    public static boolean shouldBeIgnored(CtElement element) {
         return element instanceof CtComment || element.isImplicit();
     }
 

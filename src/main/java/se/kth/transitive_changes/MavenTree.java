@@ -18,12 +18,11 @@ import java.util.Set;
 public class MavenTree {
 
     ApiMetadata apiMetadata;
-
+    Dependency dependency;
 
     public MavenTree() {
 
     }
-
 
     /**
      * Read the pom file and create a tree of dependencies
@@ -31,7 +30,7 @@ public class MavenTree {
      * @param apiMetadata the metadata of the api
      * @return the set of dependencies
      */
-    public static Set<Dependency> read(ApiMetadata apiMetadata) {
+    public static Set<Dependency> read(ApiMetadata apiMetadata, Dependency dependency) {
         // read the pom file and create a tree
         try {
             //create a temporary file to store the pom file
@@ -42,7 +41,7 @@ public class MavenTree {
             //execute the maven command to get the dependency tree
             String command = "mvn dependency:tree -DoutputType=dot -f %s -DoutputFile=%s".formatted(pom.toAbsolutePath().toString(), treeFile.toAbsolutePath().toString());
             MavenCommand.execCommand(command, null);
-            return parseTree(treeFile);
+            return parseTree(treeFile, dependency);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -56,9 +55,10 @@ public class MavenTree {
      * @param treeFile the file containing the tree
      * @return the set of dependencies
      */
-    public static Set<Dependency> parseTree(Path treeFile) {
+    public static Set<Dependency> parseTree(Path treeFile, Dependency dependency
+    ) {
         Set<Dependency> dependencies = new HashSet<>();
-
+        String direct = dependency.getGroupId() + ":" + dependency.getArtifactId()+":jar:"+dependency.getVersion();
         //parse the tree file and create a tree
         try {
             List<String> lines = Files.readAllLines(treeFile);
@@ -67,11 +67,12 @@ public class MavenTree {
                     String[] parts = line.split("->");
                     String parent = parts[0].trim();
                     String child = parts[1].trim();
-                    Dependency parentDependency = readDependency(parent);
-                    Dependency childDependency = readDependency(child);
-                    dependencies.add(parentDependency);
-                    dependencies.add(childDependency);
-
+                    if (parent.contains(direct) || child.contains(direct)) {
+                        Dependency parentDependency = readDependency(parent);
+                        Dependency childDependency = readDependency(child);
+                        dependencies.add(parentDependency);
+                        dependencies.add(childDependency);
+                    }
                 }
             }
 

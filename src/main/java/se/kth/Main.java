@@ -95,8 +95,11 @@ public class Main {
             ApiMetadata oldApiMetadata = new ApiMetadata(oldDependency.toFile().getName(), oldDependency);
             ApiMetadata newApiMetadata = new ApiMetadata(newDependency.toFile().getName(), newDependency);
 
-            Set<Dependency> v1 = MavenTree.read(oldApiMetadata);
-            Set<Dependency> v2 = MavenTree.read(newApiMetadata);
+            Dependency o = new Dependency("com.google.guava", "guava", "30.1-jre", "jar");
+            Dependency n = new Dependency("com.google.guava", "guava", "30.1.1-jre", "jar");
+
+            Set<Dependency> v1 = MavenTree.read(oldApiMetadata, o);
+            Set<Dependency> v2 = MavenTree.read(newApiMetadata, n);
 
             Set<PairTransitiveDependency> transitiveDependencies = MavenTree.diff(v1, v2);
 

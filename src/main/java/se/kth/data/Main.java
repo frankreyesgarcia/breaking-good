@@ -12,6 +12,10 @@ import se.kth.japianalysis.BreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
 import se.kth.sponvisitors.BreakingChangeVisitor;
 import se.kth.spoon_compare.Client;
+import se.kth.transitive_changes.CompareTransitiveDependency;
+import se.kth.transitive_changes.Dependency;
+import se.kth.transitive_changes.MavenTree;
+import se.kth.transitive_changes.PairTransitiveDependency;
 import spoon.reflect.CtModel;
 
 import java.io.IOException;
@@ -29,7 +33,7 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "72c6b8dd53be12cc675d6c49ca55b18c27e94f1a";
+        String fileName = "b8f92ff37d1aed054d8320283fd6d6a492703a55";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
@@ -55,14 +59,14 @@ public class Main {
 
         for (BreakingUpdateMetadata breakingUpdate : breakingUpdateList) {
 
-//            if (breakingUpdate.project().equals("google-cloud-java")) {
-//                continue;
-//            }
+            if (breakingUpdate.project().equals("google-cloud-java")) {
+                continue;
+            }
 
-//            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/%s.md".formatted(breakingUpdate.breakingCommit()));
-//            if (Files.exists(explaining)) {
-//                continue;
-//            }
+            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/%s.md".formatted(breakingUpdate.breakingCommit()));
+            if (Files.exists(explaining)) {
+                continue;
+            }
 
             Path jarsFile = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/");
 
@@ -134,22 +138,70 @@ public class Main {
                 System.out.println("Breaking Commit: " + breakingUpdate.breakingCommit());
                 System.out.println("Changes: " + changesV2.brokenChanges().size());
 
-                String explanationFolder = list.size() > 1 ? "Explanations/" : "Explanations_tmp/";
-                final var dir = Path.of(explanationFolder);
-                if (Files.notExists(dir)) {
-                    Files.createDirectory(dir);
-                }
+                if (!changesV2.brokenChanges().isEmpty()) {
+                    String explanationFolder = list.size() > 1 ? "Explanations/" : "Explanations_tmp/";
+                    final var dir = Path.of(explanationFolder);
+                    if (Files.notExists(dir)) {
+                        Files.createDirectory(dir);
+                    }
 
-                explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
-                ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
-                explanationTemplate.generateTemplate();
-                System.out.println("**********************************************************");
+                    explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
+                    ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
+                    explanationTemplate.generateTemplate();
 //                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
 //                    bg.setHasExplanation(true);
 //                } else {
 //                    System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
 //                }
-                breakingGoodInfoList.add(bg);
+                    breakingGoodInfoList.add(bg);
+                } else {
+                    System.out.println("No breaking changes found for breaking update " + breakingUpdate.breakingCommit() + "in the direct dependency.");
+                }
+                System.out.println("**********************************************************");
+
+
+
+                /*
+                 ************************************************************
+                 * Handle transitive dependencies and generate explanation
+                 * **********************************************************
+                 */
+
+                Dependency oldVersion = new Dependency(breakingUpdate.updatedDependency().dependencyGroupID(),
+                        breakingUpdate.updatedDependency().dependencyArtifactID(),
+                        "jar",
+                        breakingUpdate.updatedDependency().previousVersion());
+                Dependency newVersion = new Dependency(breakingUpdate.updatedDependency().dependencyGroupID(),
+                        breakingUpdate.updatedDependency().dependencyArtifactID(),
+                        "jar",
+                        breakingUpdate.updatedDependency().newVersion());
+
+                Set<Dependency> v1 = MavenTree.read(oldApiVersion, oldVersion);
+                Set<Dependency> v2 = MavenTree.read(newApiVersion, newVersion);
+
+                Set<PairTransitiveDependency> transitiveDependencies = MavenTree.diff(v1, v2);
+
+                for (PairTransitiveDependency pair : transitiveDependencies) {
+                    try {
+                        System.out.println("Comparing " + pair.newVersion() + " and " + pair.oldVersion());
+                        CompareTransitiveDependency compareTransitiveDependency = new CompareTransitiveDependency(pair.newVersion(), pair.oldVersion());
+                        List<BreakingChange> changes = compareTransitiveDependency.compareDependency();
+                        visitors = jApiCmpAnalyze.getVisitors(changes);
+                        options = new BreakingGoodOptions();
+
+                        changesV2 = combineResults.analyze_v2(visitors, options);
+
+                        System.out.println("Breaking changes for " + pair.newVersion() + " and " + pair.oldVersion());
+                        System.out.println("Breaking Changes amount: " + changesV2.brokenChanges().size());
+
+
+                        JsonUtils.writeToFile(Path.of("breaking-changes-%s.json".formatted(pair.oldVersion().getArtifactId())), compareTransitiveDependency);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
             } catch (IOException e) {
                 System.out.println("Error analyzing breaking update " + breakingUpdate.breakingCommit());
                 System.out.println(e);

@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class Download {
 
@@ -69,19 +68,51 @@ public class Download {
         }
     }
 
-    public static File getJarFile(String groupId, String artifactId, String version, Path directory)
+    private static String getUrlOfRequestedSource(String indexPageContent, String indexPageUrl) {
+        List<String> candidates = Jsoup.parse(indexPageContent).select("a").stream()
+                .map(e -> e.attr("href"))
+                .toList();
+
+        Optional<String> artifactJar = candidates.stream()
+                .filter(c -> c.endsWith(".jar"))
+                .filter(c -> c.contains("sources"))
+                .filter(c -> !c.contains("javadoc"))
+                .filter(c -> !c.contains("tests"))
+                .filter(c -> !c.contains("test"))
+                .filter(c -> !c.contains("config"))
+                .findFirst();
+
+        if (artifactJar.isPresent()) {
+            String artifactJarName = artifactJar.get();
+            // java.net.URI has the worst APIs ever
+            if (artifactJarName.startsWith("https://") || artifactJarName.startsWith("http://")) {
+                return artifactJarName;
+            }
+            return indexPageUrl + artifactJarName;
+        } else {
+            System.err.println("Could not find jar for " + indexPageUrl);
+            return null;
+        }
+    }
+
+    public static File getJarFile(String groupId, String artifactId, String version, Path directory, String extension)
             throws IOException, InterruptedException {
         for (String repositoryUrl : repositoryUrls.values()) {
             String url = getArtifactUrl(groupId, artifactId, version, repositoryUrl);
             String indexPageContent = getIndexPageOfRepository(url);
             if (indexPageContent != null) {
-                String jarUrl = getUrlOfRequestedJar(indexPageContent, url);
-                if (jarUrl != null) {
+
+                String jarUrl = "";
+                if (extension.equals("jar"))
+                    jarUrl = getUrlOfRequestedJar(indexPageContent, url);
+                else if (extension.equals("sources"))
+                    jarUrl = getUrlOfRequestedSource(indexPageContent, url);
+                 if (jarUrl != null) {
                     HttpClient client = HttpClient.newHttpClient();
                     HttpRequest request =
                             HttpRequest.newBuilder().uri(URI.create(jarUrl)).build();
 
-                    final var resolve = directory.resolve(String.format("%s-%s", artifactId, version) + ".jar");
+                    final var resolve = directory.resolve(String.format("%s-%s", artifactId, version) + "." + extension);
                     HttpResponse<Path> result = client.send(request, HttpResponse.BodyHandlers.ofFile(resolve));
                     return result.body().toFile();
                 }
