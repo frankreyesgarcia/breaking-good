@@ -3,12 +3,13 @@ package se.kth.transitive_changes;
 import lombok.Getter;
 import lombok.Setter;
 import se.kth.breaking_changes.ApiMetadata;
+import se.kth.breaking_changes.Download;
 import util.MavenCommand;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,16 +35,20 @@ public class MavenTree {
         // read the pom file and create a tree
         try {
             //create a temporary file to store the pom file
-            Path pom = Files.createTempFile("tmp-pom", ".xml");
-            Path treeFile = Files.createFile(Path.of("trees%s.txt".formatted(new Date().getTime())));
-            apiMetadata.extractPomFromJar(pom);
+//            Path pom = Files.createTempFile("tmp-pom", ".xml");
+//            Path pom = Files.createFile(Path.of("tmp-%s-%s-%s-pom.xml".formatted(dependency.getArtifactId(), dependency.getVersion(), new java.util.Date().getTime())));
+            Path treeFile = Files.createFile(Path.of("trees-%s-%s-%s.txt".formatted(dependency.getArtifactId(), dependency.getVersion(), new java.util.Date().getTime())));
+            File pom = Download.getJarFile(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), Path.of(""), "pom");
+
+//            apiMetadata.extractPomFromJar(pom);
 
             //execute the maven command to get the dependency tree
-            String command = "mvn dependency:tree -DoutputType=dot -f %s -DoutputFile=%s".formatted(pom.toAbsolutePath().toString(), treeFile.toAbsolutePath().toString());
+            assert pom != null;
+            String command = "mvn dependency:tree -DoutputType=dot -f %s -DoutputFile=%s".formatted(pom.getAbsolutePath(), treeFile.toAbsolutePath().toString());
             MavenCommand.execCommand(command, null);
             return parseTree(treeFile, dependency);
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -58,7 +63,7 @@ public class MavenTree {
     public static Set<Dependency> parseTree(Path treeFile, Dependency dependency
     ) {
         Set<Dependency> dependencies = new HashSet<>();
-        String direct = dependency.getGroupId() + ":" + dependency.getArtifactId()+":jar:"+dependency.getVersion();
+        String direct = dependency.getGroupId() + ":" + dependency.getArtifactId() + ":jar:" + dependency.getVersion();
         //parse the tree file and create a tree
         try {
             List<String> lines = Files.readAllLines(treeFile);

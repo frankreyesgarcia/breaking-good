@@ -33,7 +33,7 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "b8f92ff37d1aed054d8320283fd6d6a492703a55";
+        String fileName = "c5fd5187ce64d2b53602717f09cc18dd21d55e8d";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
@@ -112,6 +112,7 @@ public class Main {
             );
 
             Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
+            Changes_V2 changesV2;
 
             List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
 
@@ -130,7 +131,7 @@ public class Main {
                 List<BreakingChangeVisitor> visitors = jApiCmpAnalyze.getVisitors(breakingChanges);
                 BreakingGoodOptions options = new BreakingGoodOptions();
 
-                Changes_V2 changesV2 = combineResults.analyze_v2(visitors, options);
+                changesV2 = combineResults.analyze_v2(visitors, options);
 
 //                Changes changes = combineResults.analyze();
                 changesCount(changesV2, bg);
@@ -146,7 +147,7 @@ public class Main {
                     }
 
                     explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
-                    ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
+                    ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit()+"la_hostia" + ".md");
                     explanationTemplate.generateTemplate();
 //                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
 //                    bg.setHasExplanation(true);
@@ -160,6 +161,9 @@ public class Main {
                 System.out.println("**********************************************************");
 
 
+                if (!changesV2.brokenChanges().isEmpty()) {
+                    return;
+                }
 
                 /*
                  ************************************************************
@@ -188,6 +192,13 @@ public class Main {
                         List<BreakingChange> changes = compareTransitiveDependency.compareDependency();
                         visitors = jApiCmpAnalyze.getVisitors(changes);
                         options = new BreakingGoodOptions();
+
+
+                        client.setClasspath(List.of(Path.of("/Users/frank/Documents/Work/PHD/Explaining/Java-incom/surefire-api-3.0.0-M5.jar")));
+
+                        model = client.createModel();
+                        combineResults = new CombineResults(apiChanges, oldApiVersion, newApiVersion, mavenLogAnalyzer, model);
+                        combineResults.setProject("projects/%s".formatted(breakingUpdate.breakingCommit()));
 
                         changesV2 = combineResults.analyze_v2(visitors, options);
 

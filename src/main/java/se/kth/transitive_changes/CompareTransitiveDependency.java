@@ -47,8 +47,8 @@ public class CompareTransitiveDependency {
         ApiMetadata apiMetadataOldVersion = convertToApiMetadata(oldVersion, tmp);
         // compare the dependencies
         JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(
-                apiMetadataNewVersion,
-                apiMetadataOldVersion
+                apiMetadataOldVersion,
+                apiMetadataNewVersion
         );
         return jApiCmpAnalyze.useJApiCmp_v2();
     }
