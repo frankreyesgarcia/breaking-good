@@ -19,6 +19,10 @@ public class CompareTransitiveDependency {
 
     Dependency oldVersion;
 
+    ApiMetadata newApiMetadata;
+
+    ApiMetadata oldApiMetadata;
+
     List<BreakingChange> breakingChanges;
 
     public CompareTransitiveDependency(Dependency newVersion, Dependency oldVersion) {
@@ -38,17 +42,17 @@ public class CompareTransitiveDependency {
         return new ApiMetadata(file.toPath());
     }
 
-    public List<BreakingChange> compareDependency() throws IOException, InterruptedException {
+    public List<BreakingChange> getChangesBetweenDependencies() throws IOException, InterruptedException {
 
         Path tmp = Files.createTempDirectory("tmp");
 
-        ApiMetadata apiMetadataNewVersion = convertToApiMetadata(newVersion, tmp);
+        newApiMetadata = convertToApiMetadata(newVersion, tmp);
 
-        ApiMetadata apiMetadataOldVersion = convertToApiMetadata(oldVersion, tmp);
+        oldApiMetadata = convertToApiMetadata(oldVersion, tmp);
         // compare the dependencies
         JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(
-                apiMetadataOldVersion,
-                apiMetadataNewVersion
+                oldApiMetadata,
+                newApiMetadata
         );
         return jApiCmpAnalyze.useJApiCmp_v2();
     }
