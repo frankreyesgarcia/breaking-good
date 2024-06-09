@@ -26,13 +26,14 @@ public class MavenTree {
     }
 
     /**
-     * Read the pom file and create a tree of dependencies
+     * Download the pom file and create a tree of dependencies
      *
      * @param apiMetadata the metadata of the api
      * @return the set of dependencies
      */
     public static Set<Dependency> read(ApiMetadata apiMetadata, Dependency dependency) {
         // read the pom file and create a tree
+        System.out.printf("Reading the tree for %s%n", dependency.toString());
         try {
             //create a temporary file to store the pom file
 //            Path pom = Files.createTempFile("tmp-pom", ".xml");

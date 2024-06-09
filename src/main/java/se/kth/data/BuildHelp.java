@@ -70,14 +70,14 @@ public class BuildHelp {
 
         MavenErrorLog errorLog = mavenLogAnalyzer.analyzeCompilationErrors();
         AtomicInteger errorsCount = new AtomicInteger();
-        errorLog.getErrorInfo().forEach((k, v) -> {
-            System.out.println("Path: " + k);
-            errorsCount.addAndGet(v.size());
-            v.forEach(errorInfo -> {
-                System.out.println("Line: " + errorInfo.getClientLinePosition());
-                System.out.println("Error: " + errorInfo.getErrorMessage());
-            });
-        });
+//        errorLog.getErrorInfo().forEach((k, v) -> {
+//            System.out.println("Path: " + k);
+//            errorsCount.addAndGet(v.size());
+//            v.forEach(errorInfo -> {
+//                System.out.println("Line: " + errorInfo.getClientLinePosition());
+//                System.out.println("Error: " + errorInfo.getErrorMessage());
+//            });
+//        });
 
         bg.setErrorsFromLog(errorsCount.get());
         return errorLog;

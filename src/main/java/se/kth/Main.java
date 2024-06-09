@@ -106,7 +106,7 @@ public class Main {
             for (PairTransitiveDependency pair : transitiveDependencies) {
                 try {
                     CompareTransitiveDependency compareTransitiveDependency = new CompareTransitiveDependency(pair.newVersion(), pair.oldVersion());
-                    compareTransitiveDependency.compareDependency();
+                    compareTransitiveDependency.getChangesBetweenDependencies();
                     System.out.println("Breaking changes for " + pair.newVersion() + " and " + pair.oldVersion());
                     System.out.println("Breaking Changes amount: " + compareTransitiveDependency.getBreakingChanges().size());
 

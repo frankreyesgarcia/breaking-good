@@ -31,7 +31,7 @@ public class CompareTransitiveDependency {
     }
 
 
-    public ApiMetadata convertToApiMetadata(Dependency dependency, Path folder) throws IOException, InterruptedException {
+    public static ApiMetadata convertToApiMetadata(Dependency dependency, Path folder) throws IOException, InterruptedException {
 
         File file = Download.getJarFile(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(), folder, "jar");
 

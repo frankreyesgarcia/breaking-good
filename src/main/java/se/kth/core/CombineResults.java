@@ -53,6 +53,19 @@ public class CombineResults {
         this.model = model;
     }
 
+    public CombineResults(ApiMetadata oldVersion, ApiMetadata newVersion, MavenErrorLog mavenLog, CtModel model) {
+
+        Objects.requireNonNull(oldVersion);
+        Objects.requireNonNull(newVersion);
+        Objects.requireNonNull(mavenLog);
+        Objects.requireNonNull(model);
+
+        this.oldVersion = oldVersion;
+        this.newVersion = newVersion;
+        this.mavenLog = mavenLog;
+        this.model = model;
+    }
+
     public Changes analyze() throws IOException {
 
         Set<BreakingChange> change = new HashSet<>();
@@ -81,7 +94,7 @@ public class CombineResults {
         try {
             // client.setClasspath(List.of(oldVersion.getFile()));
             mavenLog.getErrorInfo().forEach((k, v) -> {
-                SpoonAnalyzer spoonAnalyzer = new SpoonAnalyzer(v, apiChanges, model);
+                SpoonAnalyzer spoonAnalyzer = new SpoonAnalyzer(v, model);
                 results.addAll(spoonAnalyzer.applySpoonV2(breakingChangeVisitors, opts, project + k));
 //            System.out.printf("Amount of instructions %d%n", results.size());
 

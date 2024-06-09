@@ -101,7 +101,7 @@ public class Download {
                 .toList();
 
         Optional<String> artifactJar = candidates.stream()
-                .filter(c -> c.endsWith(".jar"))
+                .filter(c -> c.endsWith("-sources.jar"))
                 .filter(c -> c.contains("sources"))
                 .filter(c -> !c.contains("javadoc"))
                 .filter(c -> !c.contains("tests"))
@@ -141,6 +141,8 @@ public class Download {
                     HttpRequest request =
                             HttpRequest.newBuilder().uri(URI.create(jarUrl)).build();
                     String fileExtension = extension.equals("pom") ? "xml" : extension;
+                    if (extension.equals("sources"))
+                        fileExtension = "zip";
                     final var resolve = directory.resolve(String.format("%s-%s", artifactId, version) + "." + fileExtension);
                     HttpResponse<Path> result = client.send(request, HttpResponse.BodyHandlers.ofFile(resolve));
                     return result.body().toFile();

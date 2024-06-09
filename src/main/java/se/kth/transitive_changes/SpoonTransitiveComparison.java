@@ -8,7 +8,7 @@ import spoon.reflect.CtModel;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.visitor.filter.TypeFilter;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -32,9 +32,9 @@ public class SpoonTransitiveComparison {
     }
 
 
-    public List<MatchElements> findTransitiveChanges() {
+    public Set<MatchElements> findTransitiveChanges() {
 
-        List<MatchElements> match = new ArrayList<>();
+        Set<MatchElements> match = new HashSet<>();
         mavenErrorLog.getErrorInfo().forEach((k, v) -> {
             List<CtElement> elements = getElementsByClass(k, v);
             System.out.println(elements.size());
@@ -50,7 +50,8 @@ public class SpoonTransitiveComparison {
                 !SpoonAnalyzer.shouldBeIgnored(element)
                         && element.getPosition().isValidPosition()
                         && element.getPosition().toString().contains(file)
-                        && lines.contains(String.valueOf(element.getPosition().getLine()))
+                        && lines.contains(String.valueOf(element.getPosition().getLine())
+                )
         ).list();
     }
 
@@ -72,26 +73,6 @@ public class SpoonTransitiveComparison {
         }).filter(Objects::nonNull).toList();
     }
 
-
-    public static class MatchElements {
-        private final CtElement clientElement;
-        private final CtElement sourceElement;
-        static ErrorInfo errorInfo;
-
-
-        public MatchElements(CtElement clientElement, CtElement sourceElement) {
-            this.clientElement = clientElement;
-            this.sourceElement = sourceElement;
-        }
-
-        @Override
-        public String toString() {
-            return "MatchElements{" +
-                    "clientElement=" + clientElement +
-                    ", sourceElement=" + sourceElement +
-                    '}';
-        }
-    }
 
 }
 
