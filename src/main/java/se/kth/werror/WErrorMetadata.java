@@ -37,6 +37,8 @@ public class WErrorMetadata {
      */
     private Boolean isClientConfigProblem;
 
+    private String client;
+
     /**
      * Constructs a new WErrorMetadata object with the specified error line, warning list, client configuration problem flag, and list of Werror files.
      *
@@ -45,10 +47,11 @@ public class WErrorMetadata {
      * @param isClientConfigProblem A flag indicating whether there is a client configuration problem.
      * @param wErrorFiles           The list of files where Werror is detected.
      */
-    public WErrorMetadata(MavenErrorLog errorLine, MavenErrorLog warningList, Boolean isClientConfigProblem, List<File> wErrorFiles) {
+    public WErrorMetadata(MavenErrorLog errorLine, MavenErrorLog warningList, Boolean isClientConfigProblem, List<File> wErrorFiles, String client) {
         this.errorLine = errorLine;
         this.warningList = warningList;
         this.isClientConfigProblem = isClientConfigProblem;
         this.wErrorFiles = wErrorFiles;
+        this.client = client;
     }
 }

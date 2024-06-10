@@ -3,6 +3,7 @@ package se.kth.werror;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import se.kth.core.Changes_V2;
 import se.kth.explaining.WErrorTemplate;
 import se.kth.log_Analyzer.MavenErrorLog;
 import se.kth.log_Analyzer.MavenLogAnalyzer;
@@ -77,7 +78,7 @@ public class WError {
     }
 
 
-    public void analyzeWerror(String log, String client) throws IOException {
+    public void analyzeWerror(String log, String client, Changes_V2 changes) throws IOException {
         // prepare the log file
 
         MavenLogAnalyzer mavenLog = new MavenLogAnalyzer(new File(log));
@@ -92,11 +93,16 @@ public class WError {
         List<File> werrorFiles = findWerror(new File(client));
 
         // Create a WErrorMetadata object with the extracted information
-        WErrorMetadata wErrorMetadata = new WErrorMetadata(wError, errorLog, !werrorFiles.isEmpty(), werrorFiles);
+        WErrorMetadata wErrorMetadata = new WErrorMetadata(wError, errorLog, !werrorFiles.isEmpty(), werrorFiles, clientName(client));
 
         // Create a WErrorTemplate object with the WErrorMetadata object and the log file name
-        WErrorTemplate wErrorTemplate = new WErrorTemplate(wErrorMetadata, explanationName);
-        wErrorTemplate.generateTemplate();
+        WErrorTemplate wErrorTemplate = new WErrorTemplate(wErrorMetadata, explanationName, changes);
+            wErrorTemplate.generateTemplate();
 
     }
+
+    private String clientName(String path) {
+        return path.substring(path.lastIndexOf("/") + 1);
+    }
+
 }
