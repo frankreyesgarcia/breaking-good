@@ -1,9 +1,11 @@
 package se.kth.explaining;
 
+import se.kth.werror.WErrorMetadata;
+
 public class WErrorTemplate extends ExplanationTemplate {
 
 
-    public WErrorTemplate(String fileName) {
+    public WErrorTemplate(WErrorMetadata errorMetadata, String fileName) {
         super(fileName);
     }
 

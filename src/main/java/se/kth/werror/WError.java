@@ -3,6 +3,9 @@ package se.kth.werror;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import se.kth.explaining.WErrorTemplate;
+import se.kth.log_Analyzer.MavenErrorLog;
+import se.kth.log_Analyzer.MavenLogAnalyzer;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -15,22 +18,24 @@ import java.util.Objects;
 
 public class WError {
 
-    private final String failOnWarning = "failOnWarning";
+    private final String failOnWarningTag = "failOnWarning";
     private final String wError = "Werror";
+    private final String fileName = "pom.xml";
+    private final String explanationName;
+
+    public WError(String explanationName) {
+        this.explanationName = explanationName;
+    }
 
 
-    public NodeList parsePOM(File pom) throws ParserConfigurationException, IOException, SAXException {
+    public NodeList parsePOM(File pom, String tag) throws ParserConfigurationException, IOException, SAXException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.parse(pom.getAbsolutePath());
 
         // get the root element
-        NodeList dependencies = doc.getElementsByTagName(failOnWarning);
-
-        return dependencies;
-
-
+        return doc.getElementsByTagName(tag);
     }
 
     private List<File> findPomFiles(File file) {
@@ -42,7 +47,7 @@ public class WError {
             if (f.isDirectory()) {
                 pomFiles.addAll(findPomFiles(f));
             } else {
-                if (f.getName().equals("pom.xml")) {
+                if (f.getName().equals(fileName)) {
                     pomFiles.add(f);
                 }
             }
@@ -52,17 +57,46 @@ public class WError {
     }
 
 
-    public void findWerror(File file) {
+    public List<File> findWerror(File file) {
         List<File> pomFiles = findPomFiles(file);
+        List<File> werrorFiles = new ArrayList<>();
 
         for (File pom : pomFiles) {
             try {
-                NodeList a = parsePOM(pom);
+                NodeList fileOnWarningsNode = parsePOM(pom, failOnWarningTag);
+
+                if (fileOnWarningsNode.getLength() > 0) {
+                    werrorFiles.add(pom);
+                }
+
             } catch (ParserConfigurationException | IOException | SAXException e) {
-                e.printStackTrace();
+                System.out.println("Error parsing the file " + pom.getAbsolutePath() + " " + e.getMessage());
             }
         }
+        return werrorFiles;
     }
 
 
+    public void analyzeWerror(String log, String client) throws IOException {
+        // prepare the log file
+
+        MavenLogAnalyzer mavenLog = new MavenLogAnalyzer(new File(log));
+
+        // Extract the warning lines from the log file
+        MavenErrorLog errorLog = mavenLog.extractWarningLines(mavenLog.getLogFile().getAbsolutePath());
+
+        // Extract the Werror line from the log file
+        MavenErrorLog wError = mavenLog.extractWerrorLine(mavenLog.getLogFile().getAbsolutePath());
+
+        // find error in the client root folder.
+        List<File> werrorFiles = findWerror(new File(client));
+
+        // Create a WErrorMetadata object with the extracted information
+        WErrorMetadata wErrorMetadata = new WErrorMetadata(wError, errorLog, !werrorFiles.isEmpty(), werrorFiles);
+
+        // Create a WErrorTemplate object with the WErrorMetadata object and the log file name
+        WErrorTemplate wErrorTemplate = new WErrorTemplate(wErrorMetadata, explanationName);
+        wErrorTemplate.generateTemplate();
+
+    }
 }
