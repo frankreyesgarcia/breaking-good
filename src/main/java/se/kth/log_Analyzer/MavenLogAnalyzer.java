@@ -13,6 +13,22 @@ import java.util.regex.Pattern;
 @Getter
 public class MavenLogAnalyzer {
 
+    public static final Map<Pattern, FailureCategory> FAILURE_PATTERNS = new HashMap<>();
+
+
+    static {
+        FAILURE_PATTERNS.put(Pattern.compile("(?i)(COMPILATION ERROR|Failed to execute goal io\\.takari\\.maven\\.plugins:takari-lifecycle-plugin.*?:compile)"),
+                FailureCategory.COMPILATION_FAILURE);
+        FAILURE_PATTERNS.put(Pattern.compile("(?i)(\\[ERROR] Tests run:|There are test failures|There were test failures|" +
+                        "Failed to execute goal org\\.apache\\.maven\\.plugins:maven-surefire-plugin)"),
+                FailureCategory.TEST_FAILURE);
+        FAILURE_PATTERNS.put(Pattern.compile("(?i)(warnings found and -Werror specified)"),
+                FailureCategory.WERROR_FAILURE);
+        FAILURE_PATTERNS.put(Pattern.compile("(?i)(class file has wrong version (\\d+\\.\\d+), should be (\\d+\\.\\d+))"),
+                FailureCategory.JAVA_VERSION_FAILURE);
+    }
+
+
     // Path to the log file
     private final File logFile;
     // URL of the project
@@ -158,7 +174,7 @@ public class MavenLogAnalyzer {
      * @param fromReader BufferedReader object
      * @return Additional information
      */
-    private String extractAdditionalInfo(BufferedReader fromReader) {
+    public static String extractAdditionalInfo(BufferedReader fromReader) {
         String line = null;
         int charRead = -1;
 
