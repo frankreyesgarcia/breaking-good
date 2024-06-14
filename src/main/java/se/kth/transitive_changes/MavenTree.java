@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import se.kth.breaking_changes.ApiMetadata;
 import se.kth.breaking_changes.Download;
+import se.kth.data.JsonUtils;
 import util.MavenCommand;
 
 import java.io.File;
@@ -73,15 +74,17 @@ public class MavenTree {
                     String[] parts = line.split("->");
                     String parent = parts[0].trim();
                     String child = parts[1].trim();
-                    if (parent.contains(direct) || child.contains(direct)) {
-                        Dependency parentDependency = readDependency(parent);
-                        Dependency childDependency = readDependency(child);
-                        dependencies.add(parentDependency);
-                        dependencies.add(childDependency);
-                    }
+//                    if (parent.contains(direct) || child.contains(direct)) {
+                    Dependency parentDependency = readDependency(parent);
+                    Dependency childDependency = readDependency(child);
+                    dependencies.add(parentDependency);
+                    dependencies.add(childDependency);
+//                    }
                 }
             }
 
+            File file = new File("example.json");
+            JsonUtils.writeToFile(file.toPath(), dependencies);
             return dependencies;
 
         } catch (IOException e) {
@@ -99,7 +102,13 @@ public class MavenTree {
      */
     private static Dependency readDependency(String line) {
         String[] parts = line.split(":");
-        return new Dependency(parts[0].split("\"")[1], parts[1], parts[2], parts[3].split("\"")[0]);
+        String scope = parts.length < 5 ? null : parts[4];
+        return new Dependency(
+                parts[0].split("\"")[1],
+                parts[1],
+                parts[3].split("\"")[0],
+                parts[2],
+                scope);
     }
 
 

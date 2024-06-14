@@ -13,13 +13,17 @@ public class Dependency {
     private String groupId;
     private String artifactId;
     private String version;
+    private String scope;
+    private String type;
 
 
-
-    public Dependency(String groupId, String artifactId, String scope, String version) {
+    public Dependency(String groupId, String artifactId, String version, String type, String scope) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
+        this.scope = scope;
+        this.type = type;
+
     }
 
     public Dependency(String groupId, String artifactId) {

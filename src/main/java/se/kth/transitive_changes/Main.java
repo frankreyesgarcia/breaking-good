@@ -1,8 +1,8 @@
 package se.kth.transitive_changes;
 
 import se.kth.breaking_changes.ApiMetadata;
-import se.kth.japianalysis.BreakingChange;
 import se.kth.data.JsonUtils;
+import se.kth.japianalysis.BreakingChange;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -18,8 +18,8 @@ public class Main {
         ApiMetadata apiMetadata = new ApiMetadata(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/db02c6bcb989a5b0f08861c3344b532769530467/asto-core-v1.13.0.jar"));
         ApiMetadata apiMetadata2 = new ApiMetadata(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/db02c6bcb989a5b0f08861c3344b532769530467/asto-core-v1.15.3.jar"));
 
-        Dependency oldVersion = new Dependency("com.artipie", "asto-core","jar", "1.13.0");
-        Dependency newVersion = new Dependency("com.artipie", "asto-core","jar", "1.15.0");
+        Dependency oldVersion = new Dependency("com.artipie", "asto-core", "v1.13.0", "jar", "compile");
+        Dependency newVersion = new Dependency("com.artipie", "asto-core", "v1.15.3", "jar", "compile");
 
 
         Set<Dependency> v1 = MavenTree.read(apiMetadata, oldVersion);
