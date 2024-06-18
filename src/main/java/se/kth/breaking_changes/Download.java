@@ -73,14 +73,30 @@ public class Download {
                 .map(e -> e.attr("href"))
                 .toList();
 
-        Optional<String> artifactJar = candidates.stream()
-                .filter(c -> c.endsWith(".pom"))
-                .filter(c -> !c.contains("sources"))
-                .filter(c -> !c.contains("javadoc"))
-                .filter(c -> !c.contains("tests"))
-                .filter(c -> !c.contains("test"))
-                .filter(c -> !c.contains("config"))
-                .findFirst();
+        Optional<String> artifactJar;
+        if (indexPageUrl.contains("https://repo.jenkins-ci.org/artifactory/releases")) {
+            artifactJar = candidates.stream()
+                    .filter(c -> c.endsWith(".pom"))
+                    .findFirst();
+        } else {
+            artifactJar = candidates.stream()
+                    .filter(c -> c.endsWith(".pom"))
+                    .filter(c -> !c.contains("sources"))
+                    .filter(c -> !c.contains("javadoc"))
+                    .filter(c -> !c.contains("tests"))
+                    .filter(c -> !c.contains("test"))
+                    .filter(c -> !c.contains("config"))
+                    .findFirst();
+        }
+
+//        Optional<String> artifactJar = candidates.stream()
+//                .filter(c -> c.endsWith(".pom"))
+//                .filter(c -> !c.contains("sources"))
+//                .filter(c -> !c.contains("javadoc"))
+//                .filter(c -> !c.contains("tests"))
+//                .filter(c -> !c.contains("test"))
+//                .filter(c -> !c.contains("config"))
+//                .findFirst();
 
         if (artifactJar.isPresent()) {
             String artifactJarName = artifactJar.get();

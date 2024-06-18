@@ -12,10 +12,8 @@ import se.kth.japianalysis.BreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
 import se.kth.sponvisitors.BreakingChangeVisitor;
 import se.kth.spoon_compare.Client;
-import se.kth.transitive_changes.CompareTransitiveDependency;
 import se.kth.transitive_changes.Dependency;
-import se.kth.transitive_changes.MavenTree;
-import se.kth.transitive_changes.PairTransitiveDependency;
+import se.kth.transitive_changes.TransitiveDependencyAnalysis;
 import spoon.reflect.CtModel;
 
 import java.io.IOException;
@@ -33,11 +31,13 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "2b4d49d68112941b8abb818549389709d8327963";
+        String fileName = "b8f92ff37d1aed054d8320283fd6d6a492703a55";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
+        list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
+
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
-        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
+//        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
 //
         List<BreakingUpdateMetadata> compilationErrors = list.stream().filter(b -> b.failureCategory().equals("COMPILATION_FAILURE")).toList();
 
@@ -150,11 +150,12 @@ public class Main {
                     explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
                     ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
                     explanationTemplate.generateTemplate();
-//                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
-//                    bg.setHasExplanation(true);
-//                } else {
-//                    System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
-//                }
+                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
+                    bg.setHasExplanation(true);
+                    System.out.println("Explanation template generated for breaking update " + breakingUpdate.breakingCommit());
+                } else {
+                    System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
+                }
                     breakingGoodInfoList.add(bg);
                 } else {
                     System.out.println("No breaking changes found for breaking update " + breakingUpdate.breakingCommit() + "in the direct dependency.");
@@ -173,69 +174,31 @@ public class Main {
                  * **********************************************************
                  */
 
-//                Dependency oldVersion = new Dependency(breakingUpdate.updatedDependency().dependencyGroupID(),
-//                        breakingUpdate.updatedDependency().dependencyArtifactID(),
-//                        "jar",
-//                        breakingUpdate.updatedDependency().previousVersion());
-//                Dependency newVersion = new Dependency(breakingUpdate.updatedDependency().dependencyGroupID(),
-//                        breakingUpdate.updatedDependency().dependencyArtifactID(),
-//                        "jar",
-//                        breakingUpdate.updatedDependency().newVersion());
-//
-//                Set<Dependency> v1 = MavenTree.read(oldApiVersion, oldVersion);
-//                Set<Dependency> v2 = MavenTree.read(newApiVersion, newVersion);
-//
-//                Set<PairTransitiveDependency> transitiveDependencies = MavenTree.diff(v1, v2);
+                Dependency oldVersion = new Dependency(
+                        breakingUpdate.updatedDependency().dependencyGroupID(),
+                        breakingUpdate.updatedDependency().dependencyArtifactID(),
+                        breakingUpdate.updatedDependency().previousVersion(),
+                        "jar", "compile");
+                Dependency newVersion = new Dependency(
+                        breakingUpdate.updatedDependency().dependencyGroupID(),
+                        breakingUpdate.updatedDependency().dependencyArtifactID(),
+                        breakingUpdate.updatedDependency().newVersion()
+                        , "jar", "compile");
 
-//                for (PairTransitiveDependency pair : transitiveDependencies) {
-//                    try {
-//                        System.out.println("Comparing " + pair.newVersion() + " and " + pair.oldVersion());
-//                        CompareTransitiveDependency compareTransitiveDependency = new CompareTransitiveDependency(pair.newVersion(), pair.oldVersion());
-//                        List<BreakingChange> changes = compareTransitiveDependency.getChangesBetweenDependencies();
-//                        visitors = jApiCmpAnalyze.getVisitors(changes);
-//                        options = new BreakingGoodOptions();
-//
-//                        ApiMetadata oldTransitiveDep = compareTransitiveDependency.getOldApiMetadata();
-//
-////                        client.setClasspath(List.of(Path.of("/Users/frank/Documents/Work/PHD/Explaining/Java-incom/surefire-api-3.0.0-M5.jar")));
-//                        client.setClasspath(List.of(oldTransitiveDep.getFile()));
-//
-//                        model = client.createModel();
-//                        combineResults = new CombineResults(apiChanges, oldApiVersion, newApiVersion, mavenLogAnalyzer, model);
-//                        combineResults.setProject("projects/%s".formatted(breakingUpdate.breakingCommit()));
-//
-//                        changesV2 = combineResults.analyze_v2(visitors, options);
-//
-//                        System.out.println("Breaking changes for " + pair.newVersion() + " and " + pair.oldVersion());
-//                        System.out.println("Breaking Changes amount: " + changesV2.brokenChanges().size());
-//
-//                        if (!changesV2.brokenChanges().isEmpty()) {
-//                            String explanationFolder = list.size() > 1 ? "Explanations_transitive/" : "Explanations_tmp/";
-//                            final var dir = Path.of(explanationFolder);
-//                            if (Files.notExists(dir)) {
-//                                Files.createDirectory(dir);
-//                            }
-//
-//                            explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
-//                            ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + "_transitive" + ".md");
-//                            explanationTemplate.generateTemplate();
-////                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
-////                    bg.setHasExplanation(true);
-////                } else {
-////                    System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
-////                }
-//                            breakingGoodInfoList.add(bg);
-//                        } else {
-//                            System.out.println("No breaking changes found for breaking update " + breakingUpdate.breakingCommit() + "in the direct dependency.");
-//                        }
-//
-//
-//                        JsonUtils.writeToFile(Path.of("breaking-changes-%s.json".formatted(pair.oldVersion().getArtifactId())), compareTransitiveDependency);
-//
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                }
+
+                TransitiveDependencyAnalysis.compareTransitiveDependency(
+                        oldApiVersion,
+                        oldVersion,
+                        newApiVersion,
+                        newVersion,
+                        jApiCmpAnalyze,
+                        client,
+                        apiChanges,
+                        mavenLogAnalyzer,
+                        breakingUpdate.breakingCommit()
+                        );
+
+//                transitive(breakingUpdate, explanationStatistics, oldApiVersion, oldVersion, newApiVersion, newVersion, jApiCmpAnalyze, client, apiChanges, mavenLogAnalyzer, bg);
 
             } catch (IOException e) {
                 System.out.println("Error analyzing breaking update " + breakingUpdate.breakingCommit());
@@ -257,6 +220,10 @@ public class Main {
             System.out.println(e.toString());
             throw new RuntimeException(e);
         }
+    }
+
+    private static void transitive(BreakingUpdateMetadata breakingUpdate, List<ExplanationStatistics> explanationStatistics, ApiMetadata oldApiVersion, Dependency oldVersion, ApiMetadata newApiVersion, Dependency newVersion, JApiCmpAnalyze jApiCmpAnalyze, Client client, Set<ApiChange> apiChanges, MavenErrorLog mavenLogAnalyzer, BreakingGoodInfo bg) {
+
     }
 
     public static record ExplanationStatistics(String project, String commit, int changes) {

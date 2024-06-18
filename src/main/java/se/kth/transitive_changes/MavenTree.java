@@ -102,7 +102,7 @@ public class MavenTree {
      */
     private static Dependency readDependency(String line) {
         String[] parts = line.split(":");
-        String scope = parts.length < 5 ? null : parts[4];
+        String scope = parts.length < 5 ? "" : parts[4];
         return new Dependency(
                 parts[0].split("\"")[1],
                 parts[1],
@@ -118,13 +118,15 @@ public class MavenTree {
     public static Set<PairTransitiveDependency> diff(Set<Dependency> v1, Set<Dependency> v2) {
 
         Set<PairTransitiveDependency> transitiveDependencies = new HashSet<>();
-
-
         v2.forEach(d -> {
             for (Dependency oldVersion : v1) {
-                if (oldVersion.getGroupId().equals(d.getGroupId()) && oldVersion.getArtifactId().equals(d.getArtifactId()) && !oldVersion.getVersion().equals(d.getVersion())) {
-                    System.out.println("New version: %s".formatted(d));
+                if (
+                        oldVersion.getGroupId().equals(d.getGroupId())
+                        && oldVersion.getArtifactId().equals(d.getArtifactId())
+                        && !oldVersion.getVersion().equals(d.getVersion())
 
+                ) {
+                    System.out.println("New version: %s".formatted(d));
                     System.out.println("Old version: %s".formatted(oldVersion));
 
                     PairTransitiveDependency pairTransitiveDependency = new PairTransitiveDependency(d, oldVersion);
@@ -135,6 +137,9 @@ public class MavenTree {
 
         return transitiveDependencies;
     }
+
+
+
 
 
     public void getChanges() {

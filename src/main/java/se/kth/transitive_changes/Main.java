@@ -29,6 +29,27 @@ public class Main {
 
 
         Set<Dependency> newDependencies = findUniqueDependencies(v1, v2);
+
+
+
+        Set<DependencyRecord> changedDependencies = Dependency.findChangedDependenciesBySemVer(v1, v2);
+        System.out.println("Dependencias que han cambiado según SemVer:");
+        for (DependencyRecord record : changedDependencies) {
+            System.out.println(record.oldDependency().getArtifactId() + " - " + record.changeType() + ": " +
+                    record.oldDependency().getVersion() + " -> " + record.newDependency().getVersion());
+        }
+
+        System.out.println();
+
+        // Encontrar dependencias que han modificado solo versión y tipo
+        Set<DependencyRecord> modifiedDependencies = Dependency.findModifiedDependenciesByVersionAndScope(v1, v2);
+        System.out.println("Dependencias que han modificado solo versión y tipo:");
+        for (DependencyRecord record : modifiedDependencies) {
+            System.out.println(record.oldDependency().getArtifactId() + ": " +
+                    record.oldDependency().getVersion() + " -> " + record.newDependency().getVersion());
+        }
+
+
         Set<Dependency> removedDependencies = findUniqueDependencies(v2, v1);
 
         for (PairTransitiveDependency pair : transitiveDependencies) {
@@ -40,6 +61,9 @@ public class Main {
                 System.out.println("Breaking Changes amount: " + changes.size());
 
                 JsonUtils.writeToFile(Path.of("breaking-changes-%s.json".formatted(pair.oldVersion().getArtifactId())), compareTransitiveDependency);
+
+
+
 
             } catch (Exception e) {
                 e.printStackTrace();

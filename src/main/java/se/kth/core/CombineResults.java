@@ -39,7 +39,6 @@ public class CombineResults {
     CtModel model;
 
     public CombineResults(Set<ApiChange> apiChanges, ApiMetadata oldVersion, ApiMetadata newVersion, MavenErrorLog mavenLog, CtModel model) {
-        Objects.requireNonNull(apiChanges);
         Objects.requireNonNull(oldVersion);
         Objects.requireNonNull(newVersion);
         Objects.requireNonNull(mavenLog);
