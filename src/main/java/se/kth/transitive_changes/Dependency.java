@@ -66,14 +66,14 @@ public class Dependency {
 
         // Create a set of "groupId:artifactId" for all dependencies in v1
         for (Dependency dep : v1) {
-            v1Identifiers.add(dep.getGroupId() + ":" + dep.getArtifactId());
+            v1Identifiers.add(dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getScope());
         }
 
         Set<Dependency> uniqueDependencies = new HashSet<>();
 
         // Find dependencies in v2 that don't have the same "groupId:artifactId" in v1
         for (Dependency dep : v2) {
-            String identifier = dep.getGroupId() + ":" + dep.getArtifactId();
+            String identifier = dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getScope();
             System.out.println("Identifier: " + identifier);
             if (!v1Identifiers.contains(identifier)) {
                 uniqueDependencies.add(dep);

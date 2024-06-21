@@ -58,8 +58,10 @@ public class NewOrRemoved {
 
 //
 
+        // source code of dependency added
         Client sourceClient = new Client(Path.of("/Users/frank/Documents/Work/PHD/Explaining/Java-incom/Hamcrest/hamcrest-core-1.3-sources"));
 //        sourceClient.setClasspath(List.of(Path.of("/Users/frank/Documents/Work/PHD/Explaining/Java-incom/cactoos-0.46.jar")));
+        //client original
         Client client = new Client(Path.of("/Users/frank/Documents/Work/PHD/Explaining/Java-incom/Hamcrest/db02c6bcb989a5b0f08861c3344b532769530467/docker-adapter"));
 //        client.setClasspath(List.of(Path.of());
 

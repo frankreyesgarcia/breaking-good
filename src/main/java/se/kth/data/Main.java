@@ -31,7 +31,7 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "b8f92ff37d1aed054d8320283fd6d6a492703a55";
+        String fileName = "9836e07e553e29f16ee35b5d7e4d0370e1789ecd";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
         list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
@@ -63,7 +63,12 @@ public class Main {
                 continue;
             }
 
-            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/%s.md".formatted(breakingUpdate.breakingCommit()));
+//            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/%s.md".formatted(breakingUpdate.breakingCommit()));
+//            if (Files.exists(explaining)) {
+//                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
+//                continue;
+//            }
+            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/RemAddMod/%s.md".formatted(breakingUpdate.breakingCommit()));
             if (Files.exists(explaining)) {
                 System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
                 continue;
@@ -195,7 +200,8 @@ public class Main {
                         client,
                         apiChanges,
                         mavenLogAnalyzer,
-                        breakingUpdate.breakingCommit()
+                        breakingUpdate.breakingCommit(),
+                        model
                         );
 
 //                transitive(breakingUpdate, explanationStatistics, oldApiVersion, oldVersion, newApiVersion, newVersion, jApiCmpAnalyze, client, apiChanges, mavenLogAnalyzer, bg);

@@ -20,6 +20,10 @@ public abstract class ExplanationTemplate {
 
     }
 
+    public ExplanationTemplate(String fileName) {
+        this.fileName = fileName;
+    }
+
     public abstract String getHead();
 
     public abstract String logLine();

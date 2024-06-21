@@ -98,7 +98,9 @@ public class TransitiveChanges {
             // Encontrar dependencias que han cambiado según SemVer
 //            semver(v1, v2, commitChangesMap, breakingCommit, jsonFile);
 
-            transitiveChanges(v1, v2, transitiveModifications, breakingCommit, transitiveFile, transitiveModifications);
+//            transitiveChanges(v1, v2, transitiveModifications, breakingCommit, transitiveFile, transitiveModifications);
+
+
 
 
         }
