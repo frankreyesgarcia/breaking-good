@@ -60,7 +60,24 @@ public class WErrorTemplate extends ExplanationTemplate {
     @Override
     public String brokenElement() {
 
-        StringBuilder brokenElement = new StringBuilder("1. This occur because the option **failureOnWarning** is activated in the following files: \n");
+        String externalOptionEnable = "1. This occurs because the option **failureOnWarning** is activated in the dependency configuration file: \n" +
+                "   * To solve this problem, you need to add the option **failureOnWarning** in pom.xml file.\n" +
+                "    ```xml\n" +
+                "    <plugin>\n" +
+                "      <groupId>org.apache.maven.plugins</groupId>\n" +
+                "      <artifactId>maven-compiler-plugin</artifactId>\n" +
+                "      <version>LATEST</version>\n" +
+                "      <configuration>\n" +
+                "           <failOnWarning>false</failOnWarning>\n" +
+                "      </configuration>\n" +
+                "    </plugin>\n" +
+                "    ```";
+
+        String internalOptionEnable = "1. This occurs because the option **failureOnWarning** is activated in the configuration file : \n";
+
+        String errormessage = errorMetadata.getIsClientConfigProblem() ? internalOptionEnable : externalOptionEnable;
+
+        StringBuilder brokenElement = new StringBuilder(errormessage);
 
         for (File file : errorMetadata.getWErrorFiles()) {
             File currentFile = file;

@@ -88,6 +88,29 @@ public class MavenLogAnalyzer {
         return mavenErrorLogs;
     }
 
+    public boolean isWerror(String logFilePath) throws IOException {
+
+        try {
+            FileInputStream fileInputStream = new FileInputStream(logFilePath);
+            InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, StandardCharsets.ISO_8859_1);
+            BufferedReader reader = new BufferedReader(inputStreamReader);
+            String line;
+            String currentPath = null;
+            Pattern errorPattern = Pattern.compile("warnings found and -Werror specified");
+
+            while ((line = reader.readLine()) != null) {
+                Matcher matcher = errorPattern.matcher(line);
+                if (matcher.find()) {
+                    return true;
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 
     public MavenErrorLog extractWerrorLine(String logFilePath) throws IOException {
 

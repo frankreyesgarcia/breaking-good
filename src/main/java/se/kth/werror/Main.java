@@ -47,11 +47,11 @@ public class Main {
 //
 //    }
     public static void main(String[] args) {
-        String fileName = "c5fd5187ce64d2b53602717f09cc18dd21d55e8d";
+        String fileName = "ed7fbdd75abc666d9d5a2794e9392ed33e75de9b";
 
-//        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
+        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
-        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
+//        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
 //
         List<BreakingUpdateMetadata> compilationErrors = list.stream().filter(b -> b.failureCategory().equals("COMPILATION_FAILURE")).toList();
 
@@ -105,7 +105,7 @@ public class Main {
 
     private static void generate(BreakingUpdateMetadata breakingUpdate, Path jarsFile, List<se.kth.data.Main.ExplanationStatistics> explanationStatistics) {
 
-        WError werror = new WError("werror.md");
+        WError werror = new WError("Explanations/werror/%s.md".formatted(breakingUpdate.breakingCommit()));
 
         String client = "/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/%s/%s".formatted(breakingUpdate.breakingCommit(), breakingUpdate.project());
         String log = "projects/%s/%s/%s.log".formatted(breakingUpdate.breakingCommit(), breakingUpdate.project(), breakingUpdate.breakingCommit());

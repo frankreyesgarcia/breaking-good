@@ -83,11 +83,19 @@ public class WError {
 
         MavenLogAnalyzer mavenLog = new MavenLogAnalyzer(new File(log));
 
-        // Extract the warning lines from the log file
-        MavenErrorLog errorLog = mavenLog.extractWarningLines(mavenLog.getLogFile().getAbsolutePath());
+        boolean isWerror = mavenLog.isWerror(mavenLog.getLogFile().getAbsolutePath());
+        if (!isWerror) {
+            System.out.println("No Werror found in the log file");
+            return;
+        }
 
         // Extract the Werror line from the log file
         MavenErrorLog wError = mavenLog.extractWerrorLine(mavenLog.getLogFile().getAbsolutePath());
+
+
+        // Extract the warning lines from the log file
+        MavenErrorLog errorLog = mavenLog.extractWarningLines(mavenLog.getLogFile().getAbsolutePath());
+
 
         // find error in the client root folder.
         List<File> werrorFiles = findWerror(new File(client));
@@ -97,7 +105,7 @@ public class WError {
 
         // Create a WErrorTemplate object with the WErrorMetadata object and the log file name
         WErrorTemplate wErrorTemplate = new WErrorTemplate(wErrorMetadata, explanationName, changes);
-            wErrorTemplate.generateTemplate();
+        wErrorTemplate.generateTemplate();
 
     }
 
