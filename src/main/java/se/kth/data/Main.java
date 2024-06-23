@@ -129,6 +129,10 @@ public class Main {
             return;
         }
 
+        generateJavaVersionIncompatibilityErrorExplanation(breakingUpdate, oldApiVersion, newApiVersion);
+    }
+
+    private static void generateJavaVersionIncompatibilityErrorExplanation(BreakingUpdateMetadata breakingUpdate, ApiMetadata oldApiVersion, ApiMetadata newApiVersion) throws IOException {
         Changes_V2 changes = new Changes_V2(oldApiVersion, newApiVersion);
         Client client = new Client(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/%s/%s".formatted(breakingUpdate.breakingCommit(), breakingUpdate.project())));
 
@@ -140,7 +144,6 @@ public class Main {
         JavaIncompatibilityAnalyzer javaIncompatibilityAnalyzer = new JavaIncompatibilityAnalyzer();
         Set<String> errorList = javaIncompatibilityAnalyzer.parseErrors(client.getSourcePath().toString() + "/%s.log".formatted(breakingUpdate.breakingCommit()));
         Map<JavaVersionIncompatibility, Set<String>> versionFailures = JavaIncompatibilityAnalyzer.extractVersionErrors(errorList);
-
 
 
         JavaVersionFailure javaVersionFailure = new JavaVersionFailure();
