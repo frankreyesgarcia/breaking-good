@@ -31,13 +31,13 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "9836e07e553e29f16ee35b5d7e4d0370e1789ecd";
+        String fileName = "8ab7a7214f9ac1d130b416fae7280cfda533a54f";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
-        list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
+//        list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
 
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
-//        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
+        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
 //
         List<BreakingUpdateMetadata> compilationErrors = list.stream().filter(b -> b.failureCategory().equals("COMPILATION_FAILURE")).toList();
 
@@ -68,11 +68,11 @@ public class Main {
 //                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
 //                continue;
 //            }
-            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/RemAddMod/%s.md".formatted(breakingUpdate.breakingCommit()));
-            if (Files.exists(explaining)) {
-                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
-                continue;
-            }
+//            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/RemAddMod/%s.md".formatted(breakingUpdate.breakingCommit()));
+//            if (Files.exists(explaining)) {
+//                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
+//                continue;
+//            }
 
             Path jarsFile = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/");
 
