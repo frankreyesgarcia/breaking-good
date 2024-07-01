@@ -13,6 +13,7 @@ import se.kth.explaining.CompilationErrorTemplate;
 import se.kth.explaining.ExplanationTemplate;
 import se.kth.japianalysis.BreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
+import se.kth.log_Analyzer.MavenLogAnalyzer;
 import se.kth.sponvisitors.BreakingChangeVisitor;
 import se.kth.spoon_compare.Client;
 import se.kth.transitive_changes.CompareTransitiveDependency;
@@ -26,6 +27,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+
+import static se.kth.BreakingGood.javaVersionIncompatibilityErrorExplanation;
+import static se.kth.BreakingGood.wErrorAnalysis;
 
 public class Main {
     public static void main(String[] args) {
@@ -63,31 +67,56 @@ public class Main {
             ApiMetadata oldApiMetadata = new ApiMetadata(oldDependency.toFile().getName(), oldDependency);
             ApiMetadata newApiMetadata = new ApiMetadata(newDependency.toFile().getName(), newDependency);
 
-            JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(oldApiMetadata, newApiMetadata);
-
-            Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
-            List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
-
 
             try {
-                MavenErrorLog errorLog = BreakingGood.parseLog(mavenLog, project);
 
-                Client client = new Client(project);
-                client.setClasspath(List.of(oldDependency));
-                CtModel model = client.createModel();
+                MavenLogAnalyzer mavenLogAnalyzer = BreakingGood.parseLog(mavenLog, project);
 
-                CombineResults combineResults = new CombineResults(apiChanges, oldApiMetadata, newApiMetadata, errorLog, model);
-                //remove project name folder
-                combineResults.setProject(project.toString().substring(0, project.toString().lastIndexOf("/")));
 
-                List<BreakingChangeVisitor> visitors = jApiCmpAnalyze.getVisitors(breakingChanges);
-                BreakingGoodOptions options = new BreakingGoodOptions();
+                // Check if the log contains the -Werror flag
+                boolean isWerror = mavenLogAnalyzer.isWerror(mavenLogAnalyzer.getLogFile().getAbsolutePath());
 
-                ChangesBetweenVersions changesV2 = combineResults.analyze_v2(visitors, options);
+                if (isWerror) {
+                    // If the log contain the -Werror flag, analyze the log and generate a new log with the -Werror flag
+                    System.out.println("The log contains the -Werror flag");
+                    wErrorAnalysis(mavenLogAnalyzer.getLogFile().getAbsolutePath(), project.toString(), oldApiMetadata, newApiMetadata);
+                } else {
+                    // Check if the log contains a Java version incompatibility error
+                    boolean isJavaVersionIncompatibility = mavenLogAnalyzer.isJavaVersionIncompatibilityError(mavenLogAnalyzer.getLogFile().getAbsolutePath());
 
-                if (!changesV2.brokenChanges().isEmpty()) {
-                    ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, "Explanation.md");
-                    explanationTemplate.generateTemplate();
+                    if (isJavaVersionIncompatibility) {
+                        System.out.println("The log file contains a Java version incompatibility error.");
+                        javaVersionIncompatibilityErrorExplanation(
+                                project,
+                                mavenLog.toPath(),
+                                oldApiMetadata,
+                                newApiMetadata);
+                    } else {
+
+                        JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(oldApiMetadata, newApiMetadata);
+                        Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
+                        List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
+                        Client client = new Client(project);
+                        client.setClasspath(List.of(oldDependency));
+                        CtModel model = client.createModel();
+
+                        MavenErrorLog errorLog = mavenLogAnalyzer.analyzeCompilationErrors();
+
+                        CombineResults combineResults = new CombineResults(apiChanges, oldApiMetadata, newApiMetadata, errorLog, model);
+                        //remove project name folder
+                        combineResults.setProject(project.toString().substring(0, project.toString().lastIndexOf("/")));
+
+                        List<BreakingChangeVisitor> visitors = jApiCmpAnalyze.getVisitors(breakingChanges);
+                        BreakingGoodOptions options = new BreakingGoodOptions();
+
+                        ChangesBetweenVersions changesV2 = combineResults.analyze_v2(visitors, options);
+
+                        if (!changesV2.brokenChanges().isEmpty()) {
+                            ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, "Explanation.md");
+                            explanationTemplate.generateTemplate();
+                        }
+
+                    }
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
