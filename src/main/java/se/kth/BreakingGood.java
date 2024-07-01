@@ -22,16 +22,21 @@ public class BreakingGood {
      * @return The error log
      * @throws IOException If the log could not be read
      */
-    public static MavenErrorLog parseLog(Path logPath, Path client) throws IOException {
+    public static MavenErrorLog parseLog(File logPath, Path client) throws IOException {
+        Path mavenLog = null;
         // Parse log
-        if (!Files.exists(logPath)) {
+        if (logPath == null || !Files.exists(logPath.toPath())) {
             String log = executeMvnCleanTest(client);
             if (log != null) {
-                logPath = Path.of(log);
+                mavenLog = Path.of(log);
             }
+        } else {
+            mavenLog = logPath.toPath();
         }
+
+
         MavenLogAnalyzer mavenLogAnalyzer = new MavenLogAnalyzer(
-                new File(logPath.toString()));
+                new File(mavenLog.toString()));
         return mavenLogAnalyzer.analyzeCompilationErrors();
     }
 
@@ -60,7 +65,7 @@ public class BreakingGood {
             processBuilder.redirectOutput(tempFile);
             Process process = processBuilder.start();
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
+            if (exitCode == 0) {
                 System.out.println("Maven clean test command failed with exit code " + exitCode);
                 return null;
             } else {

@@ -4,11 +4,16 @@ package se.kth;
 import picocli.CommandLine;
 import se.kth.breaking_changes.ApiChange;
 import se.kth.breaking_changes.ApiMetadata;
+import se.kth.breaking_changes.BreakingGoodOptions;
 import se.kth.breaking_changes.JApiCmpAnalyze;
-import se.kth.core.Changes;
+import se.kth.core.ChangesBetweenVersions;
 import se.kth.core.CombineResults;
 import se.kth.data.JsonUtils;
+import se.kth.explaining.CompilationErrorTemplate;
+import se.kth.explaining.ExplanationTemplate;
+import se.kth.japianalysis.BreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
+import se.kth.sponvisitors.BreakingChangeVisitor;
 import se.kth.spoon_compare.Client;
 import se.kth.transitive_changes.CompareTransitiveDependency;
 import se.kth.transitive_changes.Dependency;
@@ -19,6 +24,7 @@ import spoon.reflect.CtModel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 public class Main {
@@ -56,25 +62,33 @@ public class Main {
 
             ApiMetadata oldApiMetadata = new ApiMetadata(oldDependency.toFile().getName(), oldDependency);
             ApiMetadata newApiMetadata = new ApiMetadata(newDependency.toFile().getName(), newDependency);
-            Client client = new Client(project);
 
             JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(oldApiMetadata, newApiMetadata);
 
             Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
+            List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
+
 
             try {
-                MavenErrorLog errorLog = BreakingGood.parseLog(mavenLog.toPath(), project);
+                MavenErrorLog errorLog = BreakingGood.parseLog(mavenLog, project);
 
-                CtModel model = BreakingGood.spoonAnalyzer(client, oldApiMetadata, project);
+                Client client = new Client(project);
+                client.setClasspath(List.of(oldDependency));
+                CtModel model = client.createModel();
 
                 CombineResults combineResults = new CombineResults(apiChanges, oldApiMetadata, newApiMetadata, errorLog, model);
                 //remove project name folder
                 combineResults.setProject(project.toString().substring(0, project.toString().lastIndexOf("/")));
-//                Changes changes = combineResults.analyze();
 
-//                ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes, "Explanations/" + project.toFile().getName() + ".md");
-//                explanationTemplate.generateTemplate();
+                List<BreakingChangeVisitor> visitors = jApiCmpAnalyze.getVisitors(breakingChanges);
+                BreakingGoodOptions options = new BreakingGoodOptions();
 
+                ChangesBetweenVersions changesV2 = combineResults.analyze_v2(visitors, options);
+
+                if (!changesV2.brokenChanges().isEmpty()) {
+                    ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, "Explanation.md");
+                    explanationTemplate.generateTemplate();
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -95,8 +109,8 @@ public class Main {
             ApiMetadata oldApiMetadata = new ApiMetadata(oldDependency.toFile().getName(), oldDependency);
             ApiMetadata newApiMetadata = new ApiMetadata(newDependency.toFile().getName(), newDependency);
 
-            Dependency o = new Dependency("com.google.guava", "guava", "30.1-jre", "jar","compile");
-            Dependency n = new Dependency("com.google.guava", "guava", "30.1.1-jre", "jar","compile");
+            Dependency o = new Dependency("com.google.guava", "guava", "30.1-jre", "jar", "compile");
+            Dependency n = new Dependency("com.google.guava", "guava", "30.1.1-jre", "jar", "compile");
 
             Set<Dependency> v1 = MavenTree.read(oldApiMetadata, o);
             Set<Dependency> v2 = MavenTree.read(newApiMetadata, n);
