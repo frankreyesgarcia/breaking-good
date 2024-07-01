@@ -1,6 +1,6 @@
 package se.kth.explaining;
 
-import se.kth.core.Changes_V2;
+import se.kth.core.ChangesBetweenVersions;
 import se.kth.log_Analyzer.ErrorInfo;
 import se.kth.sponvisitors.BrokenChanges;
 import se.kth.transitive_changes.PairTransitiveDependency;
@@ -11,7 +11,7 @@ public class TransitiveExplanationTemplate extends ExplanationTemplate {
 
     PairTransitiveDependency pair;
 
-    public TransitiveExplanationTemplate(Changes_V2 changes, PairTransitiveDependency pair, String fileName) {
+    public TransitiveExplanationTemplate(ChangesBetweenVersions changes, PairTransitiveDependency pair, String fileName) {
         super(changes, fileName);
         this.pair = pair;
     }

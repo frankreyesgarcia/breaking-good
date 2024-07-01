@@ -1,8 +1,10 @@
 package se.kth.transitive_changes;
 
+import se.kth.breaking_changes.ApiMetadata;
+import se.kth.log_Analyzer.ErrorInfo;
 import se.kth.log_Analyzer.MavenErrorLog;
-import se.kth.log_Analyzer.MavenLogAnalyzer;
 import se.kth.spoon_compare.Client;
+import se.kth.spoon_compare.SpoonResults;
 import spoon.Launcher;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtConstructorCall;
@@ -12,7 +14,10 @@ import spoon.reflect.declaration.CtElement;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.visitor.filter.TypeFilter;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
@@ -26,6 +31,8 @@ public class GetConstructByName {
     Client sourceClient;
     static CtModel clientModel;
     CtModel sourceModel;
+    String logFilePath;
+    ApiMetadata oldApiVersion;
 
     public GetConstructByName(MavenErrorLog mavenErrorLog, Client clientProject) {
         this.mavenErrorLog = mavenErrorLog;
@@ -34,41 +41,53 @@ public class GetConstructByName {
 
 
     public static void main(String[] args) throws IOException {
-        MavenLogAnalyzer mavenLogAnalyzer = new MavenLogAnalyzer(new File("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/8ab7a7214f9ac1d130b416fae7280cfda533a54f/code-coverage-api-plugin/8ab7a7214f9ac1d130b416fae7280cfda533a54f.log"));
-        MavenErrorLog mavenErrorLog = mavenLogAnalyzer.analyzeCompilationErrors();
-
         Map<String, Map<Integer, String>> lines = extractLineNumbersWithPaths("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/8ab7a7214f9ac1d130b416fae7280cfda533a54f/code-coverage-api-plugin/8ab7a7214f9ac1d130b416fae7280cfda533a54f.log");
 
-        Client clientProject = new Client(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/8ab7a7214f9ac1d130b416fae7280cfda533a54f"));
-        clientModel = clientProject.createModel();
-
         Path projectPath = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/8ab7a7214f9ac1d130b416fae7280cfda533a54f");
-
-
         Launcher launcher = new Launcher();
-        launcher.addInputResource("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/source/htmlunit-2.70.0-sources");
-//        List<Path> path = List.of(Path.of("/Users/frank/Downloads/tmp/asto-v1.10.0-sources.jar"));
-//        String[] cp2 = path.stream().map(p -> p.toAbsolutePath().toString()).toList().toArray(new String[0]);
-//        launcher.getEnvironment().setSourceClasspath(cp2);
+//        launcher.addInputResource("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/source/htmlunit-2.70.0-sources");
+////        List<Path> path = List.of(Path.of("/Users/frank/Downloads/tmp/asto-v1.10.0-sources.jar"));
+////        String[] cp2 = path.stream().map(p -> p.toAbsolutePath().toString()).toList().toArray(new String[0]);
+////        launcher.getEnvironment().setSourceClasspath(cp2);
         launcher.buildModel();
+
+
+//        getConstructs(launcher, lines, projectPath);
+
+
+//        GetConstructByName getConstructByName = new GetConstructByName(mavenErrorLog, clientProject);
+//        getConstructByName.extract();
+    }
+
+    /**
+     * Extracts the constructs from the log file
+     *
+     * @param launcher    the spoon launcher
+     * @param projectPath the path to the project
+     * @param logFilePath the path to the log file
+     */
+    public static Set<SpoonResults> getConstructs(CtModel launcher, Path projectPath, String logFilePath) {
+
+        Map<String, Map<Integer, String>> lines = extractLineNumbersWithPaths(logFilePath);
+
 
         List<String> packages = new ArrayList<>();
 
-        launcher.getModel().getRootPackage().getFactory().CompilationUnit().getMap().forEach((k, v) -> {
+        launcher.getRootPackage().getFactory().CompilationUnit().getMap().forEach((k, v) -> {
 //
             String p = v.getPackageDeclaration().toString().replace("package ", "").replace(";", "");
             packages.add(p);
             packages.add(v.getPackageDeclaration().toString());
-//            System.out.println(p);
-//            }
-
+//
         });
 
+        Set<SpoonResults> spoonedResults = new HashSet<>();
 
         Set<String> spoonedElements = new HashSet<>();
         Set<String> allCtElements = new HashSet<>();
         Map<String, String> elementLines = new HashMap<>();
         Map<String, String> elementPatterns = new HashMap<>();
+        Set<CtElement> returnElements = new HashSet<>();
 
         for (Map.Entry<String, Map<Integer, String>> entry : lines.entrySet()) {
             List<Object> spoonResult = applySpoon(projectPath + entry.getKey(), entry.getValue(),
@@ -77,25 +96,19 @@ public class GetConstructByName {
             allCtElements.addAll((Collection<? extends String>) spoonResult.get(1));
             elementLines.putAll((Map<? extends String, ? extends String>) spoonResult.get(2));
             elementPatterns.putAll((Map<? extends String, ? extends String>) spoonResult.get(3));
+            returnElements.addAll((Collection<? extends CtElement>) spoonResult.get(4));
+            spoonedResults.addAll((Collection<? extends SpoonResults>) spoonResult.get(4));
         }
 
-
-        for (String element : spoonedElements) {
-            System.out.println("SPOONED ELEMENTS");
-            System.out.println(element);
-        }
-
-
-//        GetConstructByName getConstructByName = new GetConstructByName(mavenErrorLog, clientProject);
-//        getConstructByName.extract();
+        return spoonedResults;
     }
 
     private static List<Object> applySpoon(String projectFilePath, Map<Integer, String> lineNumbers, List<String> depGrpID) {
         Launcher spoon = new Launcher();
         spoon.addInputResource(projectFilePath);
         List<Path> path = List.of(Path.of("/Users/frank/Downloads/tmp/asto-v1.10.0-sources.jar"));
-        String[] cp = path.stream().map(p -> p.toAbsolutePath().toString()).toList().toArray(new String[0]);
-        spoon.getEnvironment().setSourceClasspath(cp);
+//        String[] cp = path.stream().map(p -> p.toAbsolutePath().toString()).toList().toArray(new String[0]);
+//        spoon.getEnvironment().setSourceClasspath(cp);
         spoon.buildModel();
 
 
@@ -148,6 +161,8 @@ public class GetConstructByName {
         Map<String, String> elementPatterns = new HashMap<>();
         CtType<?> clazz = model.getAllTypes().iterator().next();
 
+        Set<SpoonResults> returnElements = new HashSet<>();
+
         for (CtElement e : clazz.getElements(new TypeFilter<>(CtElement.class))) {
 
             if (!e.isImplicit() && e.getPosition().isValidPosition() && startLines.containsKey(e.getPosition().getLine())) {
@@ -158,6 +173,16 @@ public class GetConstructByName {
                         elementStrings.add(parsedElement);
                         elementLines.put(parsedElement, startLines.get(e.getPosition().getLine()));
                         elementPatterns.put(parsedElement, replacePatterns(startLines.get(e.getPosition().getLine())));
+                        CtInvocation invocation = (CtInvocation) e;
+                        SpoonResults spoonResults = new SpoonResults();
+                        spoonResults.setName(invocation.getExecutable().getSimpleName());
+                        spoonResults.setCtElement(invocation);
+                        spoonResults.setClientLine(invocation.toString());
+                        spoonResults.setElement(invocation.getExecutable().getSignature());
+                        ErrorInfo errorInfo = new ErrorInfo(
+                                String.valueOf(e.getPosition().getLine()), "", startLines.get(e.getPosition().getLine()), startLines.get(e.getPosition().getLine()));
+                        spoonResults.setErrorInfo(errorInfo);
+                        returnElements.add(spoonResults);
                     }
                 }
                 if (e instanceof CtConstructorCall<?>) {
@@ -167,22 +192,30 @@ public class GetConstructByName {
                         elementStrings.add(parsedElement);
                         elementLines.put(parsedElement, startLines.get(e.getPosition().getLine()));
                         elementPatterns.put(parsedElement, replacePatterns(startLines.get(e.getPosition().getLine())));
+                        CtConstructorCall ctConstructorCall = (CtConstructorCall) e;
+                        SpoonResults spoonResults = new SpoonResults();
+                        spoonResults.setName(ctConstructorCall.getExecutable().getDeclaringType().getSimpleName());
+                        spoonResults.setCtElement(ctConstructorCall);
+                        spoonResults.setClientLine(ctConstructorCall.toString());
+                        spoonResults.setElement(ctConstructorCall.getExecutable().getSignature());
+                        ErrorInfo errorInfo = new ErrorInfo(
+                                String.valueOf(e.getPosition().getLine()), "", startLines.get(e.getPosition().getLine()), startLines.get(e.getPosition().getLine()));
+                        spoonResults.setErrorInfo(errorInfo);
+                        returnElements.add(spoonResults);
+
                     }
                 }
             }
         }
         // This is not good coding. Just adding the outputs to a list this way to quickly get the results,
         // without worrying about creating classes.
-        return new ArrayList<>(List.of(elementStrings, elements, elementLines, elementPatterns));
+        return new ArrayList<>(List.of(elementStrings, elements, elementLines, elementPatterns, returnElements));
     }
 
     private static String parseProject(CtElement e, List<String> dependencyGrpID) {
         CtElement parent = e.getParent(new TypeFilter<>(CtClass.class));
-
         while (parent != null) {
-
             for (String pack : dependencyGrpID) {
-                System.out.println("PACK: " + pack);
                 if (String.valueOf(parent).contains(pack)) {
                     int openingParenthesisIndex = String.valueOf(e).indexOf('(');
                     if (openingParenthesisIndex != -1) {
@@ -190,17 +223,9 @@ public class GetConstructByName {
                     }
                     return String.valueOf(e);
                 }
-                parent = parent.getParent(new TypeFilter<>(CtClass.class));
-            }
 
-//            if (String.valueOf(parent).contains(dependencyGrpID)) {
-//                int openingParenthesisIndex = String.valueOf(e).indexOf('(');
-//                if (openingParenthesisIndex != -1) {
-//                    return String.valueOf(e).substring(0, openingParenthesisIndex);
-//                }
-//                return String.valueOf(e);
-//            }
-//            parent = parent.getParent(new TypeFilter<>(CtClass.class));
+            }
+            parent = parent.getParent(new TypeFilter<>(CtClass.class));
         }
         return null;
     }

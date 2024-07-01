@@ -1,10 +1,9 @@
 package se.kth;
 
-import se.kth.breaking_changes.ApiChange;
 import se.kth.breaking_changes.ApiMetadata;
 import se.kth.breaking_changes.BreakingGoodOptions;
 import se.kth.breaking_changes.JApiCmpAnalyze;
-import se.kth.core.Changes_V2;
+import se.kth.core.ChangesBetweenVersions;
 import se.kth.core.CombineResults;
 import se.kth.japianalysis.BreakingChange;
 import se.kth.log_Analyzer.MavenErrorLog;
@@ -15,7 +14,6 @@ import spoon.reflect.CtModel;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 
 public class BreakingGoodMain {
 
@@ -25,14 +23,14 @@ public class BreakingGoodMain {
     }
 
 
-    public static Changes_V2 brokenChanges(ApiMetadata newApi, ApiMetadata oldApi, Client client, MavenErrorLog mavenLogAnalyzer) {
+    public static ChangesBetweenVersions brokenChanges(ApiMetadata newApi, ApiMetadata oldApi, Client client, MavenErrorLog mavenLogAnalyzer) {
 
         JApiCmpAnalyze jApiCmpAnalyze = new JApiCmpAnalyze(
                 oldApi,
                 newApi
         );
 
-        Changes_V2 changesV2;
+        ChangesBetweenVersions changesV2;
 
         List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
 

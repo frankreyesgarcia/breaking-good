@@ -70,7 +70,7 @@ public class Main {
                 CombineResults combineResults = new CombineResults(apiChanges, oldApiMetadata, newApiMetadata, errorLog, model);
                 //remove project name folder
                 combineResults.setProject(project.toString().substring(0, project.toString().lastIndexOf("/")));
-                Changes changes = combineResults.analyze();
+//                Changes changes = combineResults.analyze();
 
 //                ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changes, "Explanations/" + project.toFile().getName() + ".md");
 //                explanationTemplate.generateTemplate();

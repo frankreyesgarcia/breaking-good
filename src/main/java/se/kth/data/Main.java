@@ -4,7 +4,7 @@ import se.kth.breaking_changes.ApiChange;
 import se.kth.breaking_changes.ApiMetadata;
 import se.kth.breaking_changes.BreakingGoodOptions;
 import se.kth.breaking_changes.JApiCmpAnalyze;
-import se.kth.core.Changes_V2;
+import se.kth.core.ChangesBetweenVersions;
 import se.kth.core.CombineResults;
 import se.kth.explaining.CompilationErrorTemplate;
 import se.kth.explaining.ExplanationTemplate;
@@ -31,13 +31,13 @@ public class Main {
     static Set<BreakingGoodInfo> breakingGoodInfoList = new HashSet<>();
 
     public static void main(String[] args) {
-        String fileName = "8ab7a7214f9ac1d130b416fae7280cfda533a54f";
+        String fileName = "b8f92ff37d1aed054d8320283fd6d6a492703a55";
 
 //        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark"));
-//        list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
+        list = BuildHelp.getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/RQ3/transitive_jsons"));
 
 //        list = getBreakingCommit(Path.of("examples/Benchmark"));
-        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
+//        list = getBreakingCommit(Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/benchmark/data/benchmark/%s.json".formatted(fileName)));
 //
         List<BreakingUpdateMetadata> compilationErrors = list.stream().filter(b -> b.failureCategory().equals("COMPILATION_FAILURE")).toList();
 
@@ -68,11 +68,11 @@ public class Main {
 //                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
 //                continue;
 //            }
-//            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/RemAddMod/%s.md".formatted(breakingUpdate.breakingCommit()));
-//            if (Files.exists(explaining)) {
-//                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
-//                continue;
-//            }
+            Path explaining = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/Explanations/RemAddMod/%s.md".formatted(breakingUpdate.breakingCommit()));
+            if (Files.exists(explaining)) {
+                System.out.println("Explanation already exists for breaking update " + breakingUpdate.breakingCommit());
+                continue;
+            }
 
             Path jarsFile = Path.of("/Users/frank/Documents/Work/PHD/Explaining/breaking-good/projects/");
 
@@ -87,6 +87,7 @@ public class Main {
                 processingBreakingUpdate(breakingUpdate, jarsFile, explanationStatistics);
 
             } catch (Exception e) {
+                e.printStackTrace();
                 System.out.println("Error processing breaking update " + breakingUpdate.breakingCommit());
                 System.out.println(e.toString());
                 continue;
@@ -105,6 +106,7 @@ public class Main {
             bg.setFailureCategory(breakingUpdate.failureCategory());
             MavenErrorLog mavenLogAnalyzer = mavenLogParser(breakingUpdate, bg);
 
+            String logPath = "projects/%s/%s/%s.log".formatted(breakingUpdate.breakingCommit(), breakingUpdate.project(), breakingUpdate.breakingCommit());
 
             Path oldDependency = jarsFile.resolve("%s/%s-%s.jar".formatted(breakingUpdate.breakingCommit(), breakingUpdate.updatedDependency().dependencyArtifactID(), breakingUpdate.updatedDependency().previousVersion()));
             Path newDependency = jarsFile.resolve("%s/%s-%s.jar".formatted(breakingUpdate.breakingCommit(), breakingUpdate.updatedDependency().dependencyArtifactID(), breakingUpdate.updatedDependency().newVersion()));
@@ -118,7 +120,7 @@ public class Main {
             );
 
             Set<ApiChange> apiChanges = jApiCmpAnalyze.useJApiCmp();
-            Changes_V2 changesV2;
+            ChangesBetweenVersions changesV2;
 
             List<BreakingChange> breakingChanges = jApiCmpAnalyze.useJApiCmp_v2();
 
@@ -155,12 +157,12 @@ public class Main {
                     explanationStatistics.add(new ExplanationStatistics(breakingUpdate.project(), breakingUpdate.breakingCommit(), changesV2.brokenChanges().size()));
                     ExplanationTemplate explanationTemplate = new CompilationErrorTemplate(changesV2, explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md");
                     explanationTemplate.generateTemplate();
-                if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
-                    bg.setHasExplanation(true);
-                    System.out.println("Explanation template generated for breaking update " + breakingUpdate.breakingCommit());
-                } else {
-                    System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
-                }
+                    if (Files.exists(Path.of(explanationFolder + "/" + breakingUpdate.breakingCommit() + ".md"))) {
+                        bg.setHasExplanation(true);
+                        System.out.println("Explanation template generated for breaking update " + breakingUpdate.breakingCommit());
+                    } else {
+                        System.out.println("Error generating explanation template for breaking update " + breakingUpdate.breakingCommit());
+                    }
                     breakingGoodInfoList.add(bg);
                 } else {
                     System.out.println("No breaking changes found for breaking update " + breakingUpdate.breakingCommit() + "in the direct dependency.");
@@ -189,8 +191,8 @@ public class Main {
                         breakingUpdate.updatedDependency().dependencyArtifactID(),
                         breakingUpdate.updatedDependency().newVersion()
                         , "jar", "compile");
-
-
+//
+//
                 TransitiveDependencyAnalysis.compareTransitiveDependency(
                         oldApiVersion,
                         oldVersion,
@@ -201,7 +203,9 @@ public class Main {
                         apiChanges,
                         mavenLogAnalyzer,
                         breakingUpdate.breakingCommit(),
-                        model
+                        model,
+                        logPath
+
                         );
 
 //                transitive(breakingUpdate, explanationStatistics, oldApiVersion, oldVersion, newApiVersion, newVersion, jApiCmpAnalyze, client, apiChanges, mavenLogAnalyzer, bg);

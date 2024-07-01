@@ -74,7 +74,6 @@ public class Dependency {
         // Find dependencies in v2 that don't have the same "groupId:artifactId" in v1
         for (Dependency dep : v2) {
             String identifier = dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getScope();
-            System.out.println("Identifier: " + identifier);
             if (!v1Identifiers.contains(identifier)) {
                 uniqueDependencies.add(dep);
             }

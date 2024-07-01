@@ -47,7 +47,7 @@ public class JApiCmpToSpoonVisitor implements JApiCmpDeltaVisitor {
             cls.getInterfaces().forEach(i ->
                     visit(cls, i)
             );
-        } catch (NoClassDefFoundError e) {
+        } catch (Exception | NoClassDefFoundError e) {
             // logger.error(e);
         }
     }

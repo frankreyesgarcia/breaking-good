@@ -2,23 +2,15 @@ package se.kth.transitive_changes;
 
 import lombok.Getter;
 import se.kth.breaking_changes.ApiMetadata;
-import se.kth.breaking_changes.BreakingGoodOptions;
 import se.kth.breaking_changes.Download;
 import se.kth.breaking_changes.JApiCmpAnalyze;
-import se.kth.core.Changes_V2;
-import se.kth.core.CombineResults;
 import se.kth.japianalysis.BreakingChange;
-import se.kth.log_Analyzer.MavenErrorLog;
-import se.kth.sponvisitors.BreakingChangeVisitor;
-import se.kth.spoon_compare.Client;
-import spoon.reflect.CtModel;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 public class CompareTransitiveDependency {
